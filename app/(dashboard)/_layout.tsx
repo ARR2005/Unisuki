@@ -9,11 +9,10 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // Hides the clunky default top header
+        headerShown: true,
         tabBarActiveTintColor: isDark ? '#10B981' : '#059669', // Beautiful green accent for active tab
         tabBarInactiveTintColor: isDark ? '#9CA3AF' : '#6B7280',
         
-        // 1. The Magic Sauce: Make the default navigation bar completely clear
         tabBarStyle: {
           backgroundColor: 'transparent',
           borderTopWidth: 0, // Removes the ugly native separator line
@@ -25,7 +24,7 @@ export default function TabsLayout() {
     >
       {/* Home Tab */}
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
@@ -36,9 +35,20 @@ export default function TabsLayout() {
 
       {/* Search Tab */}
       <Tabs.Screen
-        name="search"
+        name="reserve"
         options={{
-          title: 'Search',
+          title: 'Reserve',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      {/* Search Tab */}
+      <Tabs.Screen
+        name="message"
+        options={{
+          title: 'Message',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="search-outline" size={size} color={color} />
           ),

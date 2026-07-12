@@ -1,55 +1,62 @@
-import React from 'react';
-import { ImageBackground, View, useColorScheme, StyleSheet } from 'react-native';
-import { Slot } from 'expo-router';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
+import "../global.css";
 
-function LayoutContent() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  
-  // 1. Grab the precise height of the phone's notch/island dynamically
-  const insets = useSafeAreaInsets(); 
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useColorScheme, Image, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-  const backgroundImage = isDark 
-    ? require('../assets/darkBackground.png') 
-    : require('../assets/whiteBackground.png');
-
-  return (
-    <View style={styles.container}>
-      <StatusBar style={'dark'} />
-      <View 
-        style={{ height: insets.top }} 
-        className="w-full bg-[#070707] dark:bg-[#070707] light:bg-[#F3F4F6]" 
-      />
-      <ImageBackground 
-        source={backgroundImage} 
-        resizeMode="cover"
-        style={styles.flexFill}
-      >
-        <View style={{ paddingBottom: insets.bottom }} className="flex-1 bg-transparent">
-          <Slot /> 
-        </View>
-      </ImageBackground>
-    </View>
-  );
-}
+const transparentNavigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "transparent",
+  },
+};
 
 export default function RootLayout() {
+  const isDark = useColorScheme() === "dark";
+  const backgroundImage = isDark
+    ? require("../assets/darkBackground.png")
+    : require("../assets/whiteBackground.png");
+
   return (
-    <SafeAreaProvider>
-      <LayoutContent />
-    </SafeAreaProvider>
+    <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+      <ThemeProvider value={transparentNavigationTheme}>
+        <View style={styles.container}>
+          <StatusBar
+            style={isDark ? "light" : "dark"}
+            translucent
+            backgroundColor="transparent"
+          />
+
+          <View pointerEvents="none" style={styles.background}>
+            <Image
+              source={backgroundImage}
+              resizeMode="cover"
+              style={styles.background}
+            />
+          </View>
+
+          <Stack screenOptions={{ contentStyle: styles.transparentContent }}>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+          </Stack>
+        </View>
+      </ThemeProvider>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
-  flexFill: {
-    flex: 1,
-  }
+  background: {
+    height: "100%",
+    width: "100%",
+    position: "absolute",
+  },
+  transparentContent: {
+    backgroundColor: "transparent",
+  },
 });
