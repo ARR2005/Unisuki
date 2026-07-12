@@ -18,6 +18,7 @@ export default function AuthLayout() {
       <TouchableOpacity
         className="bg-blue-500 p-4 w-32 rounded"
         onPress={() => {
+          console.log("Login Pressed");
           RedirectToHome();
         }}
       >

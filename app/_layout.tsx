@@ -5,6 +5,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme, Image, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PortalHost } from "@rn-primitives/portal";
 
 const transparentNavigationTheme = {
   ...DefaultTheme,
@@ -40,7 +41,9 @@ export default function RootLayout() {
 
           <Stack screenOptions={{ contentStyle: styles.transparentContent }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
           </Stack>
+          <PortalHost />
         </View>
       </ThemeProvider>
     </SafeAreaView>
