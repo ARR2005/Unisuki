@@ -1,10 +1,8 @@
-import { View, Text } from 'react-native'
 import React from 'react'
+import CameraScreen from '../../feature/postProduct/components/camera'
 
-export default function Camera() {
+export default function camera() {
   return (
-    <View>
-      <Text>camera</Text>
-    </View>
+    <CameraScreen />
   )
 }

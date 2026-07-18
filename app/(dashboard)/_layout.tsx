@@ -26,7 +26,7 @@ export default function TabsLayout() {
       }} />
       
       <Tabs.Screen name="camera" options={{
-        title: "Camera",        // tabBarIcon: ({ color, size }) => (
+        title: "Post Product",        // tabBarIcon: ({ color, size }) => (
         //   <Ionicons name="home" size={size} color={color} />
         // ),
       }} />

@@ -48,9 +48,9 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
             style={ [styles.tabItem , {backgroundColor: isFocused ? PrimaryColor : "transparent"} ] }
           >
             {getIconByRouteName(route.name, "#fff")}
-            {isFocused && <Animated.Text entering={FadeIn.duration(200) } style={ styles.text }>
+            {isFocused && <Animated.Text entering={ FadeIn.duration(200) } style={ styles.text }>
               {label as string}
-            </Text>}
+            </Animated.Text>}
           </AnimatedTouchableOpacity>
         );
       })}
