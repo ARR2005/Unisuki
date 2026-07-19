@@ -64,7 +64,7 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
             return <Ionicons name="home-outline" size={28} color={colors} />
         case 'message':
             return <Ionicons name="chatbubble-outline" size={28} color={colors} />
-        case 'camera':
+        case 'postProduct':
             return <Ionicons name="add-circle-outline" size={28} color={colors} />
         case 'reserve': 
             return <Ionicons name="calendar-outline" size={28} color={colors} />

@@ -3,6 +3,8 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; // Standard icon package in Expo
 import CustomNavBar from '../../components/CustomNavbar';
 
+
+
 export default function TabsLayout() {
   return (
     <Tabs 
@@ -25,7 +27,7 @@ export default function TabsLayout() {
         // ),
       }} />
       
-      <Tabs.Screen name="camera" options={{
+      <Tabs.Screen name="postProduct" options={{
         title: "Post Product",        // tabBarIcon: ({ color, size }) => (
         //   <Ionicons name="home" size={size} color={color} />
         // ),

@@ -1,4 +1,4 @@
-import { useImage } from "@/services/image/ImageContext";
+import { useImage } from "../../../context/storeImage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -58,7 +58,7 @@ export const useCameraCapture = () => {
         height: capturedImage.height,
       });
 
-      router.push("/(camera)/postForm");
+      // router.push("/(camera)/postForm");
     } catch (error) {
       setUploadError("Failed to capture image");
     } finally {
@@ -88,7 +88,7 @@ export const useCameraCapture = () => {
         height: asset.height,
       });
 
-      router.push("/(camera)/postForm");
+      // router.push("/(camera)/postForm");
     } catch {
       setUploadError("Failed to pick image from gallery");
     }

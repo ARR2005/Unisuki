@@ -1,4 +1,3 @@
-import "../global.css";
 
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
@@ -6,6 +5,9 @@ import { StatusBar } from "expo-status-bar";
 import { useColorScheme, Image, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PortalHost } from "@rn-primitives/portal";
+import { ImageProvider } from "../context/storeImage";
+
+import "../global.css";
 
 const transparentNavigationTheme = {
   ...DefaultTheme,
@@ -15,38 +17,45 @@ const transparentNavigationTheme = {
   },
 };
 
-export default function RootLayout() {
+const MainLayout = () => {
   const isDark = useColorScheme() === "dark";
   const backgroundImage = isDark
     ? require("../assets/darkBackground.png")
     : require("../assets/whiteBackground.png");
+return (
+    <ThemeProvider value={transparentNavigationTheme}>
+      <View style={styles.container}>
+        <StatusBar
+          style={isDark ? "light" : "dark"}
+          translucent
+          backgroundColor="transparent"
+        />
 
-  return (
-    <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-      <ThemeProvider value={transparentNavigationTheme}>
-        <View style={styles.container}>
-          <StatusBar
-            style={isDark ? "light" : "dark"}
-            translucent
-            backgroundColor="transparent"
+        <View pointerEvents="none" style={styles.background}>
+          <Image
+            source={backgroundImage}
+            resizeMode="cover"
+            style={styles.background}
           />
-
-          <View pointerEvents="none" style={styles.background}>
-            <Image
-              source={backgroundImage}
-              resizeMode="cover"
-              style={styles.background}
-            />
-          </View>
-
-          <Stack screenOptions={{ contentStyle: styles.transparentContent }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
-          </Stack>
-          <PortalHost />
         </View>
-      </ThemeProvider>
-    </SafeAreaView>
+
+        <Stack screenOptions={{ contentStyle: styles.transparentContent }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+        </Stack>
+        <PortalHost />
+      </View>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ImageProvider>
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+        <MainLayout />
+      </SafeAreaView>
+    </ImageProvider>
   );
 }
 
