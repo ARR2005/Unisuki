@@ -1,3 +1,3 @@
-export { default as LocalModelService } from "@/services/ml/LocalModelService";
-export type { ClassificationResult } from "@/services/ml/LocalModelService";
+export { default as LocalModelService } from "@/service/ImageClassifier/ml/LocalModelService";
+export type { ClassificationResult } from "@/service/ImageClassifier/ml/LocalModelService";
 

@@ -4,7 +4,7 @@ import {
     LocalModelService,
     generateAutoFilledData,
     usePostForm,
-} from "@/feature/camera";
+} from "@/feature/postProduct/camera";
 import { useImage } from "@/context/storeImage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
