@@ -1,17 +1,17 @@
-import React, { useState,  } from 'react'
 import { TouchableOpacity, StyleSheet, Text,  View, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Separator } from '@/components/ui/separator';
 import {  useCameraCapture } from '@/feature/postProduct/hooks/useCameraCapture';
-import { useRouter } from "expo-router";
+import { BlurView } from 'expo-blur'
+import React from 'react';
 
 export default function PostProduct() {
     const isDark = useColorScheme() === "dark";
-    const router = useRouter(); 
+
     const {
         isLoading,
-        handleCameraCapture,
-        handlePickFromGallery,
+        useCamera,
+        useGallery,
     } = useCameraCapture();
 
     return (
@@ -20,11 +20,11 @@ export default function PostProduct() {
             {/* Header Section */}
             <View className="px-2 py-2 mx-6 " >
                 <View className="items-center mb-8">
-                    <View className="w-16 h-16 rounded-full bg-main items-center justify-center mb-4">
-                        <Ionicons name="image-outline" size={28} color="#fff" />
+                    <View className="items-center justify-center">
+                        <Ionicons name="image-outline" size={82} color={isDark ? "#fff" : "#000"} />
                     </View>
                     <Text className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"} text-center`}>Add Product Photo</Text>
-                    <Separator className="my-4" />
+                    <Separator className="my-2" />
                     <Text className={`text-1xl ${isDark ? "text-white" : "text-gray-600"} text-center mt-2 leading-5`}>
                         Post product with a clear image. You can take a new photo or choose one from your gallery.
                     </Text>
@@ -32,39 +32,47 @@ export default function PostProduct() {
             </View>
 
             {/* Selectable Options Section */}
-            <View style={styles.cardContainer}>
+            <View style={styles.cardContainer} className="gap-1" >
                 {/* Camera Option */}
                 <TouchableOpacity
-                    onPress={handleCameraCapture}
+                    onPress={useCamera}
                     disabled={isLoading}
                     style={[styles.touchable, styles.touchableTop]}
+                    className={` ${isDark ? "bg-gray-300/5  border-darkPrimary/20 border-2 " : "bg-white/40 border-black border-2 "  }`}
                 >
                     <View style={styles.iconContainerTransparent}>
-                        <Ionicons name="camera-outline" size={24} color="#000" />
+                        <Ionicons name="camera-outline" size={32} color={isDark ? "#fff" : "#000"} />
                     </View>
                     <View style={styles.textContainer}>
-                        <Text style={styles.titleText}>Use Camera</Text>
-                        <Text style={styles.subtitleText}>Capture a fresh photo right now</Text>
+                        <Text className={`font-semibold text-lg ${isDark ? "text-white" : "text-black"}`}>
+                            Use Camera
+                        </Text>
+                        <Text className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                            Capture a fresh photo right now
+                        </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#000" />
+                    <Ionicons name="chevron-forward" size={20} color={isDark ? "#fff" : "#000"} />
                 </TouchableOpacity>
-
-                <Separator />
 
                 {/* Gallery Option */}
                 <TouchableOpacity
-                    onPress={handlePickFromGallery}
+                    onPress={useGallery}
                     disabled={isLoading}
                     style={[styles.touchable, styles.touchableBotton]}
+                    className={` ${isDark ? "bg-gray-300/5 border-darkPrimary/20 border-2" : "bg-white/40  border-black border-2 " }`}
                 >
-                    <View style={styles.iconContainerGray}>
-                        <Ionicons name="images-outline" size={24} color="#000" />
+                    <View style={styles.iconContainerTransparent}>
+                        <Ionicons name="images-outline" size={24} color={isDark ? "#fff" : "#000"} />
                     </View>
                     <View style={styles.textContainer}>
-                        <Text style={styles.titleText}>Choose From Gallery</Text>
-                        <Text style={styles.subtitleText}>Select an image you already have</Text>
+                        <Text className={`font-semibold text-lg ${isDark ? "text-white" : "text-black"}`}>
+                            Choose From Gallery
+                        </Text>
+                        <Text className={`text-sm mt-1 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                            Select an image you already have
+                        </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#000" />
+                    <Ionicons name="chevron-forward" size={20} color={isDark ? "#fff" : "#000"} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -74,26 +82,23 @@ export default function PostProduct() {
 
 const styles = StyleSheet.create({
     cardContainer: {
-        paddingHorizontal: 6, // px-6
-        paddingVertical: 8,   // py-8
-        backgroundColor: 'grey', // bg-main
+  // py-8 // bg-main
         borderRadius: 16,   
-        marginHorizontal: 20 ,   // rounded-2xl
-        
+        marginHorizontal: 32,   // rounded-2xl
+        backgroundColor: 'transparent',
         // --- Custom Offset Shadow ---
         // iOS Shadow Settings
-        shadowColor: 'white', // Dark shadow color
+        shadowColor: 'green', // Dark shadow color
         shadowOffset: { width: 0, height: 10 }, // Noticeable downward offset
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        shadowOpacity: 0.32,
+        shadowRadius: 32,
         
-        // Android Shadow Settings
-        elevation: 20, 
+        elevation: 120, 
     },
     touchable: {
-        padding:4,           // p-5
+        padding: 24,           // p-5
         flexDirection: 'row',  // flex-row
-        alignItems: 'center',  // items-center
+        alignItems: 'center', 
     },
     touchableTop: {
         borderTopLeftRadius: 16,  // rounded-t-2xl
@@ -122,15 +127,5 @@ const styles = StyleSheet.create({
     textContainer: {
         marginLeft: 2,        // ml-4
         flex:1,               // flex-1
-    },
-    titleText: {
-        fontWeight: '600',     // font-semibold
-        fontSize: 18,          // text-lg
-        color: '#000',
-    },
-    subtitleText: {
-        fontSize: 14,          // text-sm
-        marginTop: 4,          // mt-1
-        color: '#4b5563',      // text-gray-600 (highly recommended for readability)
     },
 });

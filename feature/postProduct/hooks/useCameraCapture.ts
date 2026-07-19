@@ -18,6 +18,8 @@ export const useCameraCapture = () => {
     loadPermission();
   }, []);
 
+
+  // CAMERA PERMISSION HANDLING
   const handleRequestPermission = async () => {
     const result = await ImagePicker.requestCameraPermissionsAsync();
     setPermission(result);
@@ -26,7 +28,8 @@ export const useCameraCapture = () => {
     }
   };
 
-  const handleCameraCapture = async () => {
+  // CAMERA CAPTURE 
+  const useCamera = async () => {
     const currentPermission = permission ?? (await ImagePicker.getCameraPermissionsAsync());
 
     if (!currentPermission.granted) {
@@ -66,7 +69,8 @@ export const useCameraCapture = () => {
     }
   };
 
-  const handlePickFromGallery = async () => {
+  // GALLERY PICKING HANDLING
+  const useGallery = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
@@ -98,7 +102,7 @@ export const useCameraCapture = () => {
     permission,
     isLoading,
     handleRequestPermission,
-    handleCameraCapture,
-    handlePickFromGallery,
+    useCamera,
+    useGallery,
   };
 };
