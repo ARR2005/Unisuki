@@ -41,8 +41,9 @@ return (
 
         <Stack screenOptions={{ contentStyle: styles.transparentContent }}>
           <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
-          <Stack.Screen name="(post)" options={{ headerShown: false }} />
+          <Stack.Screen name="(post)/postForm" options={{ headerShown: false }} />
         </Stack>
         <PortalHost />
       </View>

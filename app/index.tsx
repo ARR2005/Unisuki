@@ -6,19 +6,20 @@ import {
 } from "react-native";
 
 
+
 function RedirectToHome() {
   // auth logic here
 
-  return router.replace("/(dashboard)/home");  ;
+  return router.replace("/(auth)");  
 }
 
 export default function AuthLayout() {
+
   return(
     <View>
       <TouchableOpacity
         className="bg-blue-500 p-4 w-32 rounded"
         onPress={() => {
-          console.log("Login Pressed");
           RedirectToHome();
         }}
       >

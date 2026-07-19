@@ -16,7 +16,6 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
   return (
     <View style={ styles.container }>
       {state.routes.map((route, index) => {
-        console.log("route", route);
 
         const { options } = descriptors[route.key];
         const label =
