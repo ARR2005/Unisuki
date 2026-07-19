@@ -61,7 +61,7 @@ export const useCameraCapture = () => {
         height: capturedImage.height,
       });
 
-      router.push("/(post product)/postForm");
+      router.push("/(post)/postForm");
     } catch (error) {
       setUploadError("Failed to capture image");
     } finally {
@@ -92,7 +92,7 @@ export const useCameraCapture = () => {
         height: asset.height,
       });
 
-      router.push("/(post product)/postForm");
+      router.push("/(post)/postForm");
     } catch {
       setUploadError("Failed to pick image from gallery");
     }

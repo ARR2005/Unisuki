@@ -61,7 +61,7 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigat
     function getIconByRouteName(routeName: string, colors: string) {
       switch (routeName) {
         case 'home': 
-            return <Ionicons name="home-outline" size={28} color={colors} />
+            return <Ionicons name="home-outline" size={32} color={colors} />
         case 'message':
             return <Ionicons name="chatbubble-outline" size={28} color={colors} />
         case 'postProduct':
