@@ -1,34 +1,23 @@
 import { router } from "expo-router";
-import { 
-  TouchableOpacity, 
-  View 
-  ,Text
-} from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
+import "@/service/firebaseConfigs";
+import { BlurView } from "expo-blur";
 
-
-
-function RedirectToHome() {
-  // auth logic here
-
-  return router.replace("/(auth)");  
+function RedirectToAuth() {
+  return router.replace("/(auth)");
 }
 
 export default function AuthLayout() {
-
-  return(
+  return (
     <View>
       <TouchableOpacity
         className="bg-blue-500 p-4 w-32 rounded"
         onPress={() => {
-          RedirectToHome();
+          RedirectToAuth();
         }}
       >
         <Text>Login</Text>
-      
       </TouchableOpacity>
     </View>
-
-
   );
 }
-
