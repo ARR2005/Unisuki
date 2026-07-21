@@ -44,6 +44,7 @@ return (
           <Stack.Screen name="(auth)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
           <Stack.Screen name="(post)/postForm" options={{ headerShown: false }} />
+          <Stack.Screen name="(validation)/index" options={{ headerShown: false }} />
         </Stack>
         <PortalHost />
       </View>
