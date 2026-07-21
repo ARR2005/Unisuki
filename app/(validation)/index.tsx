@@ -13,33 +13,93 @@
 //   View,
 // } from "react-native";
 
-import { View, Text } from 'react-native'
-import React from 'react'
-import { useState, useEffect } from 'react'
+// import { View, Text, TouchableOpacity } from 'react-native'
+// import React from 'react'
+// import { useState, useEffect } from 'react'
 
-export default function index() {
-  const [currentStep, setCurrentStep] = useState<number>(1);
+import React, { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-  function handleNextStep() {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+import CreateProfileForm from "@/feature/validation/createProfileForm";
+import SubmitGovIdScreen from "@/feature/validation/submitIdScreen";
+import SubmitUserIdScreen from "@/feature/validation/submitUserIdScreen";
+
+export default function Index() {
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const next = () => setCurrentStep((s) => Math.min(s + 1, 3));
+  const prev = () => setCurrentStep((s) => Math.max(s - 1, 1));
+
+  // Dynamically render the screen based on the current step
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <CreateProfileForm />;
+      case 2:
+        return <SubmitGovIdScreen />;
+      case 3:
+        return <SubmitUserIdScreen />;
+      default:
+        return <CreateProfileForm />;
     }
-  }
+  };
+
   return (
-    <View className="flex-1 items-center justify-start pt-10 bg-white">
-      <View className="flex-row justify-around items-center w-full px-6">
-        <View className="bg-black w-28 h-3 rounded-full "> </View>
-        <View className={`bg-green-400 w-28 h-3 rounded-full ${currentStep >= 2 ? 'bg-green-400' : 'bg-black'}`}> </View>
-        <View className={`bg-green-400 w-28 h-3 rounded-full ${currentStep >= 3 ? 'bg-green-400' : 'bg-black'}`}> </View>
-      </View>
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <View className="flex-1 items-center justify-between pt-6">
+          {/* Progress Indicator */}
+          <View className="w-full flex-row items-center justify-around px-6">
+            {[1, 2, 3].map((step) => (
+              <View
+                key={step}
+                className={`h-2.5 w-28 rounded-full ${
+                  currentStep >= step ? "bg-green-500" : "bg-gray-200"
+                }`}
+              />
+            ))}
+          </View>
 
-      
+          {/* Active Step Content */}
+          <View className="w-full flex-1">{renderStep()}</View>
 
+          {/* Navigation Controls */}
+          <View className="mb-6 w-full flex-row items-center justify-between px-6">
+            <TouchableOpacity
+              onPress={prev}
+              disabled={currentStep === 1}
+              className={`rounded-lg border border-gray-300 px-4 py-2 ${
+                currentStep === 1 ? "opacity-30" : "active:bg-gray-100"
+              }`}
+            >
+              <Text className="font-semibold text-gray-800">Previous Step</Text>
+            </TouchableOpacity>
 
-    </View>
-  )
+            <TouchableOpacity
+              onPress={next}
+              disabled={currentStep === 3}
+              className={`rounded-lg bg-green-600 px-4 py-2 ${
+                currentStep === 3 ? "opacity-30" : "active:bg-green-700"
+              }`}
+            >
+              <Text className="font-semibold text-white">Next Step</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
-
 
 // interface ProfileCompletionModalProps {
 //   visible: boolean;
@@ -219,262 +279,7 @@ export default function index() {
 //           className="flex-1 bg-white"
 //         >
 //           <ScrollView className="flex-1 px-12 pt-12">
-//             {/* Header */}
-//             <View className="mb-1">
-//               <View className="flex-row items-center mb-4">
-//                 <Ionicons
-//                   name="person-circle-outline"
-//                   size={36}
-//                   color="#16a34a"
-//                 />
-//                 <Text className="ml-3 text-2xl font-bold text-gray-900">
-//                   Complete Your Profile
-//                 </Text>
-//               </View>
-//               <Text className="text-base text-gray-600">
-//                 Please provide information to help other students find and trust
-//                 you on Unisuki.
-//               </Text>
-//             </View>
-
-//             {/* Form Fields */}
-//             <View className="mb-6">
-//               {/* Name */}
-//               <View className="mb-3">
-//                 <View className="flex-row items-center justify-between mb-2">
-//                   <Text className="font-semibold text-gray-800">Full Name</Text>
-//                   <Text
-//                     className={`text-xs ${formData.name.length >= 50 ? "text-red-500 font-semibold" : "text-gray-500"}`}
-//                   >
-//                     {formData.name.length}/49
-//                   </Text>
-//                 </View>
-//                 <View
-//                   className={`border rounded-lg px-4 py-1 flex-row items-center ${
-//                     errors.name ? "border-red-500 bg-red-50" : "border-gray-300"
-//                   }`}
-//                 >
-//                   <Ionicons
-//                     name="person-circle-outline"
-//                     size={20}
-//                     color={errors.name ? "#ef4444" : "#666"}
-//                     style={{ marginRight: 8 }}
-//                   />
-//                   <TextInput
-//                     placeholder="Enter your full name"
-//                     value={formData.name}
-//                     onChangeText={(value) => updateField("name", value)}
-//                     className="flex-1 text-base text-gray-900"
-//                     editable={!isLoading}
-//                     placeholderTextColor="#999"
-//                     maxLength={49}
-//                   />
-//                 </View>
-//                 {errors.name && (
-//                   <Text className="mt-1 text-xs font-semibold text-red-500">
-//                     {errors.name}
-//                   </Text>
-//                 )}
-//               </View>
-
-//               {/* Username */}
-//               <View className="mb-3">
-//                 <View className="flex-row items-center justify-between mb-2">
-//                   <Text className="font-semibold text-gray-800">Username</Text>
-//                   <Text
-//                     className={`text-xs ${formData.username.length >= 15 ? "text-red-500 font-semibold" : "text-gray-500"}`}
-//                   >
-//                     {formData.username.length}/14
-//                   </Text>
-//                 </View>
-//                 <View
-//                   className={`border rounded-lg px-4 py-1 flex-row items-center ${
-//                     errors.username
-//                       ? "border-red-500 bg-red-50"
-//                       : "border-gray-300"
-//                   }`}
-//                 >
-//                   <Ionicons
-//                     name="person-outline"
-//                     size={20}
-//                     color={errors.username ? "#ef4444" : "#666"}
-//                     style={{ marginRight: 8 }}
-//                   />
-//                   <TextInput
-//                     placeholder="Enter your username"
-//                     value={formData.username}
-//                     onChangeText={(value) => updateField("username", value)}
-//                     className="flex-1 text-base text-gray-900"
-//                     editable={!isLoading}
-//                     placeholderTextColor="#999"
-//                     maxLength={14}
-//                   />
-//                 </View>
-//                 {errors.username && (
-//                   <Text className="mt-1 text-xs font-semibold text-red-500">
-//                     {errors.username}
-//                   </Text>
-//                 )}
-//               </View>
-
-//               {/* ID Number */}
-//               <View className="mb-3">
-//                 <Text className="mb-2 font-semibold text-gray-800">
-//                   ID Number
-//                 </Text>
-//                 <View
-//                   className={`border rounded-lg px-4 py-1 flex-row items-center ${
-//                     errors.idNumber
-//                       ? "border-red-500 bg-red-50"
-//                       : "border-gray-300"
-//                   }`}
-//                 >
-//                   <Ionicons
-//                     name="card-outline"
-//                     size={20}
-//                     color={errors.idNumber ? "#ef4444" : "#666"}
-//                     style={{ marginRight: 8 }}
-//                   />
-//                   <TextInput
-//                     placeholder="12-1234-123"
-//                     value={formData.idNumber}
-//                     onChangeText={(value) => updateField("idNumber", value)}
-//                     className="flex-1 text-base text-gray-900"
-//                     editable={!isLoading}
-//                     placeholderTextColor="#999"
-//                   />
-//                 </View>
-//                 {errors.idNumber && (
-//                   <Text className="mt-1 text-xs font-semibold text-red-500">
-//                     {errors.idNumber}
-//                   </Text>
-//                 )}
-//               </View>
-
-//               {/* Age */}
-//               <View className="mb-3">
-//                 <Text className="mb-2 font-semibold text-gray-800">
-//                   Age{" "}
-//                   <Text className="text-xs text-gray-500">(must be 14-79)</Text>
-//                 </Text>
-//                 <View
-//                   className={`border rounded-lg px-4 py-1 flex-row items-center ${
-//                     errors.age ? "border-red-500 bg-red-50" : "border-gray-300"
-//                   }`}
-//                 >
-//                   <Ionicons
-//                     name="calendar-outline"
-//                     size={20}
-//                     color={errors.age ? "#ef4444" : "#666"}
-//                     style={{ marginRight: 8 }}
-//                   />
-//                   <TextInput
-//                     placeholder="Your age"
-//                     value={formData.age}
-//                     onChangeText={(value) => updateField("age", value)}
-//                     className="flex-1 text-base text-gray-900"
-//                     keyboardType="number-pad"
-//                     editable={!isLoading}
-//                     placeholderTextColor="#999"
-//                   />
-//                 </View>
-//                 {errors.age && (
-//                   <Text className="mt-1 text-xs font-semibold text-red-500">
-//                     {errors.age}
-//                   </Text>
-//                 )}
-//               </View>
-
-//               {/* Address */}
-//               <View className="mb-2">
-//                 <View className="flex-row items-center justify-between mb-2">
-//                   <Text className="font-semibold text-gray-800">Address</Text>
-//                   <Text
-//                     className={`text-xs ${formData.address.length >= 50 ? "text-red-500 font-semibold" : "text-gray-500"}`}
-//                   >
-//                     {formData.address.length}/49
-//                   </Text>
-//                 </View>
-//                 <View
-//                   className={`border rounded-lg px-4 py-1 flex-row items-start ${
-//                     errors.address
-//                       ? "border-red-500 bg-red-50"
-//                       : "border-gray-300"
-//                   }`}
-//                 >
-//                   <Ionicons
-//                     name="location-outline"
-//                     size={20}
-//                     color={errors.address ? "#ef4444" : "#666"}
-//                     style={{ marginRight: 8, marginTop: 8 }}
-//                   />
-//                   <TextInput
-//                     placeholder="Your address"
-//                     value={formData.address}
-//                     onChangeText={(value) => updateField("address", value)}
-//                     className="flex-1 text-base text-gray-900"
-//                     multiline
-//                     numberOfLines={3}
-//                     editable={!isLoading}
-//                     placeholderTextColor="#999"
-//                     textAlignVertical="top"
-//                     maxLength={49}
-//                   />
-//                 </View>
-//                 {errors.address && (
-//                   <Text className="mt-1 text-xs font-semibold text-red-500">
-//                     {errors.address}
-//                   </Text>
-//                 )}
-//               </View>
-//             </View>
-
-//             {/* Checkbox and Terms */}
-//             <View className="flex-row items-start mb-6">
-//               <TouchableOpacity
-//                 onPress={() => setIsAgreed(!isAgreed)}
-//                 className="mr-3 mt-0.5"
-//               >
-//                 <Ionicons
-//                   name={isAgreed ? "checkbox" : "square-outline"}
-//                   size={24}
-//                   color={isAgreed ? "#16a34a" : "#9ca3af"}
-//                 />
-//               </TouchableOpacity>
-//               <View className="flex-1">
-//                 <Text className="text-xs text-gray-600">
-//                   By checking this box, I agree to the{" "}
-//                   <Text
-//                     className="font-bold text-green-600"
-//                     onPress={() => setShowTerms(true)}
-//                   >
-//                     Terms and Conditions
-//                   </Text>
-//                   . This information helps other students find and trust you on
-//                   Unisuki.
-//                 </Text>
-//               </View>
-//             </View>
-
-//             {/* Submit Button */}
-//             <TouchableOpacity
-//               onPress={handleComplete}
-//               disabled={isLoading || !isAgreed}
-//               className={`p-2 rounded-lg items-center ${
-//                 isLoading || !isAgreed ? "bg-gray-400" : "bg-tertiary"
-//               }`}
-//             >
-//               {isLoading ? (
-//                 <ActivityIndicator color="#fff" size="large" />
-//               ) : (
-//                 <View className="flex-row items-center">
-//                   <Ionicons name="checkmark-done" size={20} color="#fff" />
-//                   <Text className="ml-2 text-base font-bold text-white">
-//                     Complete Profile
-//                   </Text>
-//                 </View>
-//               )}
-//             </TouchableOpacity>
+//
 //           </ScrollView>
 //         </KeyboardAvoidingView>
 //       )}
