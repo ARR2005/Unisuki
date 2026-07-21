@@ -7,7 +7,7 @@ import { useEffect } from "react";
 
 
 function RedirectToAuth() {
-  return router.replace("/(validation)");
+  return router.replace("/(auth)");
 }
 
 export default function AuthLayout() {

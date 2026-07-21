@@ -33,7 +33,7 @@ export default function SubmitPictureScreen() {
       {/* Header */}
       <View className="my-4 mb-6 w-full items-center justify-center">
         <Text className="text-2xl font-bold text-black">
-          Verify Your identity
+          Verify Your Identity
         </Text>
         <Text className="mt-1 text-center text-sm text-gray-500">
           Help us verify your identity for added security.

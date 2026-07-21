@@ -121,9 +121,9 @@ export default function CreateProfileForm() {
         automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
       >
         {/* Header */}
-        <View className="my-4 w-full items-center justify-center gap-2">
+        <View className="my-4 w-full items-center justify-center gap-2 ">
           <Text className="text-4xl font-bold tracking-widest text-gray-900">
-            Account Setup
+            Account  Setup 
           </Text>
           <Text className="text-base tracking-wider text-gray-600">
             Please provide your information to
