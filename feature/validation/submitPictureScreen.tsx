@@ -1,16 +1,22 @@
 import { useValidationCamera } from "@/feature/validation/hooks/useValidationCamera";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { forwardRef, useImperativeHandle, useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 type StepKey = "front" | "back" | "selfie";
 
-export default function SubmitPictureScreen() {
+interface SubmitPictureScreenHandle {
+  validateImages: () => boolean;
+  getImages: () => Record<StepKey, string | null>;
+}
+
+const SubmitPictureScreen = forwardRef<SubmitPictureScreenHandle>((_, ref) => {
   const [images, setImages] = useState<Record<StepKey, string | null>>({
     front: null,
     back: null,
     selfie: null,
   });
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { isLoading, error, launchCamera } = useValidationCamera();
 
@@ -18,11 +24,29 @@ export default function SubmitPictureScreen() {
     const captured = await launchCamera();
     if (!captured) return;
 
+    setSubmitError(null);
     setImages((prev) => ({
       ...prev,
       [key]: captured.uri,
     }));
   };
+
+  const validateImages = () => {
+    if (!images.front || !images.back || !images.selfie) {
+      setSubmitError("Please capture all required photos before proceeding.");
+      return false;
+    }
+
+    setSubmitError(null);
+    return true;
+  };
+
+  const getImages = () => images;
+
+  useImperativeHandle(ref, () => ({
+    validateImages,
+    getImages,
+  }));
 
   return (
     <ScrollView
@@ -45,6 +69,13 @@ export default function SubmitPictureScreen() {
         {error ? (
           <View className="rounded-2xl bg-red-50 p-4">
             <Text className="text-sm font-medium text-red-700">{error}</Text>
+          </View>
+        ) : null}
+        {submitError ? (
+          <View className="rounded-2xl bg-red-50 p-4">
+            <Text className="text-sm font-medium text-red-700">
+              {submitError}
+            </Text>
           </View>
         ) : null}
 
@@ -268,4 +299,7 @@ export default function SubmitPictureScreen() {
       </View>
     </ScrollView>
   );
-}
+});
+
+SubmitPictureScreen.displayName = "SubmitPictureScreen";
+export default SubmitPictureScreen;

@@ -85,7 +85,7 @@ export default function SignUpForm() {
             isDark ? "text-white" : "text-black"
           }`}
         >
-          Create an Account
+          Create an  Account
         </Text>
         <Text className={`text-center ${isDark ? "text-white" : "text-black"}`}>
           Come and join our campus marketplace.
@@ -94,7 +94,7 @@ export default function SignUpForm() {
 
       <View className="space-y-4 mx-2 gap-2">
         <View
-          className={`flex-row items-center bg-white/30 py-2 px-4 my-1 rounded-2xl border ${
+          className={`flex-row items-center bg-white/30 py-1 px-4 my-1 rounded-2xl border ${
             isDark ? "border-white" : "border-black/30"
           }`}
         >
@@ -115,7 +115,7 @@ export default function SignUpForm() {
         </View>
 
         <View
-          className={`flex-row items-center bg-white/30 py-2 px-4 my-1 rounded-2xl border ${
+          className={`flex-row items-center bg-white/30 py-1 px-4 my-1 rounded-2xl border ${
             isDark ? "border-white" : "border-black/30"
           }`}
         >
@@ -135,7 +135,7 @@ export default function SignUpForm() {
         </View>
 
         <View
-          className={`flex-row items-center bg-white/30 py-2 px-4 my-1 rounded-2xl border ${
+          className={`flex-row items-center bg-white/30 py-1 px-4 my-1 rounded-2xl border ${
             isDark ? "border-white" : "border-black/30"
           }`}
         >
@@ -155,12 +155,12 @@ export default function SignUpForm() {
         </View>
 
         <TouchableOpacity
-          className={`mx-8 px-40 mt-6 rounded-2xl overflow-hidden ${isLoading ? "opacity-70" : ""}`}
+          className={`mx-8 mt-2 rounded-2xl overflow-hidden ${isLoading ? "opacity-70" : ""}`}
           onPress={handleSignUp}
           disabled={isLoading}
         >
           <View
-            className={`py-4 rounded-2xl shadow-lg ${
+            className={`py-2 rounded-2xl shadow-lg ${
               isLoading ? "bg-green-700" : "bg-green-600 rounded-2xl"
             }`}
           >

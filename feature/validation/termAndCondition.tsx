@@ -1,10 +1,10 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 interface TermAndConditionProps {
-  onClose: () => void
-  onAgree: () => void
+  onClose: () => void;
+  onAgree: () => void;
 }
 
 export default function TermAndCondition({
@@ -29,6 +29,14 @@ export default function TermAndCondition({
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={true}
       >
+        <View className="mb-4 rounded-2xl bg-green-50 p-4">
+          <Text className="text-sm leading-5 text-gray-700">
+            By completing this form you have agreed with the Terms and
+            Conditions. This is to help verify my identity and ensure the
+            security of my account.
+          </Text>
+        </View>
+
         {/* Section 1 */}
         <View className="mb-6 gap-2">
           <Text className="text-base font-bold text-gray-900">
@@ -36,8 +44,8 @@ export default function TermAndCondition({
           </Text>
           <Text className="text-sm leading-5 text-gray-600">
             Welcome to UniSuki! By downloading, accessing, or using our mobile
-            application, you automatically agree to be bound by these Terms
-            and Conditions. These terms constitute a legally binding agreement
+            application, you automatically agree to be bound by these Terms and
+            Conditions. These terms constitute a legally binding agreement
             between you and the UniSuki Capstone. If you do not agree to these
             terms, you must immediately cease using the application.
           </Text>
@@ -45,8 +53,8 @@ export default function TermAndCondition({
             We provide a specialized platform designed exclusively for the
             community at the University of Cordilleras Grade School and Junior
             High School to buy, sell, or trade items—with a specific focus on
-            school uniforms (like white polos, PE pants, and green
-            vests)—safely and efficiently on campus.
+            school uniforms (like white polos, PE pants, and green vests)—safely
+            and efficiently on campus.
           </Text>
         </View>
 
@@ -61,7 +69,7 @@ export default function TermAndCondition({
           </Text>
           <View className="mt-1 gap-2 pl-2">
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 You must be a currently enrolled student, an active
                 faculty/staff member, or an alumni (provided you still possess
@@ -70,14 +78,14 @@ export default function TermAndCondition({
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 You must possess a valid, school-issued email address and use it
                 for account registration.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 You must be at least 14 years of age. Users under the age of 18
                 are expected to have discussed their use of the application and
@@ -115,17 +123,17 @@ export default function TermAndCondition({
           </Text>
           <View className="mt-1 gap-2 pl-2">
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 Does not own, sell, resell, distribute, or provide any of the
                 goods listed in the application.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
-                Is not a party to any transactions, agreements, or disputes
-                that may arise between users.
+                Is not a party to any transactions, agreements, or disputes that
+                may arise between users.
               </Text>
             </View>
           </View>
@@ -138,24 +146,23 @@ export default function TermAndCondition({
           </Text>
           <Text className="text-sm leading-5 text-gray-600">
             Unisuki utilizes a TensorFlow-based image recognition model (machine
-            learning/AI) to assist in the categorization and tagging of
-            listings (e.g., automatically identifying a photo as a "White
-            Polo" or "Green Vest"). This feature is provided for convenience
-            only.
+            learning/AI) to assist in the categorization and tagging of listings
+            (e.g., automatically identifying a photo as a "White Polo" or "Green
+            Vest"). This feature is provided for convenience only.
           </Text>
           <Text className="text-sm font-semibold text-gray-700">
             You acknowledge that:
           </Text>
           <View className="gap-2 pl-2">
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 The AI model may provide inaccurate, incomplete, or incorrect
                 categorizations.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 Sellers remain entirely responsible for verifying the accuracy
                 of their listings, including description, price, condition, and
@@ -163,7 +170,7 @@ export default function TermAndCondition({
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 UniSuki shall not be held liable for any damages or confusion
                 resulting from incorrect automatic categorization.
@@ -185,47 +192,47 @@ export default function TermAndCondition({
           </Text>
           <View className="mt-1 gap-2 pl-2">
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Academic Dishonesty:
-                </Text>{' '}
+                </Text>{" "}
                 Selling or buying coursework, essays, tests, assignments, or
                 unauthorized school materials.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
-                <Text className="font-semibold text-gray-800">Harassment:</Text>{' '}
+                <Text className="font-semibold text-gray-800">Harassment:</Text>{" "}
                 Engaging in bullying, hate speech, stalking, or any form of
                 harassment against other students.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
-                <Text className="font-semibold text-gray-800">Fraud:</Text>{' '}
+                <Text className="font-semibold text-gray-800">Fraud:</Text>{" "}
                 Providing false information, misrepresenting items, or failing
                 to deliver on agreed transactions.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Inappropriate Content:
-                </Text>{' '}
+                </Text>{" "}
                 Uploading nude, offensive, profane, or otherwise inappropriate
                 imagery.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Account Misuse:
-                </Text>{' '}
+                </Text>{" "}
                 Attempting to access other users' accounts or distributing spam.
               </Text>
             </View>
@@ -244,16 +251,16 @@ export default function TermAndCondition({
           </Text>
           <View className="mt-1 gap-2 pl-2">
             {[
-              'Illegal drugs, narcotics, or controlled substances.',
-              'Alcohol and tobacco products.',
-              'Weapons of any kind (firearms, knives, ammunition, explosives).',
-              'Counterfeit goods or stolen property.',
-              'Explicit adult materials or services.',
-              'Prescription medications.',
-              'Any items that violate the University of Cordilleras Student Code of Conduct.',
+              "Illegal drugs, narcotics, or controlled substances.",
+              "Alcohol and tobacco products.",
+              "Weapons of any kind (firearms, knives, ammunition, explosives).",
+              "Counterfeit goods or stolen property.",
+              "Explicit adult materials or services.",
+              "Prescription medications.",
+              "Any items that violate the University of Cordilleras Student Code of Conduct.",
             ].map((item, idx) => (
               <View key={idx} className="flex-row items-start gap-2">
-                <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+                <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
                 <Text className="flex-1 text-sm leading-5 text-gray-600">
                   {item}
                 </Text>
@@ -273,22 +280,22 @@ export default function TermAndCondition({
           </Text>
           <View className="mt-1 gap-2 pl-2">
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Meeting Locations:
-                </Text>{' '}
+                </Text>{" "}
                 Always agree to meet in well-lit, populated, public locations
                 exclusively on campus (e.g., the Library, Student Center, or
                 Campus Security Office).
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Approved Meetup Hours:
-                </Text>{' '}
+                </Text>{" "}
                 To ensure a secure environment, physical transactions and
                 meetups may only be scheduled and conducted during official
                 school hours, or up to a maximum of 30 minutes after standard
@@ -296,21 +303,21 @@ export default function TermAndCondition({
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Do Not Disclose Sensitive Data:
-                </Text>{' '}
+                </Text>{" "}
                 Never share sensitive personal information (home address, bank
                 details, passwords) with other users within the in-app chat.
               </Text>
             </View>
             <View className="flex-row items-start gap-2">
-              <Text className="text-xs text-gray-600">{'\u2B24'}</Text>
+              <Text className="text-xs text-gray-600">{"\u2B24"}</Text>
               <Text className="flex-1 text-sm leading-5 text-gray-600">
                 <Text className="font-semibold text-gray-800">
                   Bring a Friend:
-                </Text>{' '}
+                </Text>{" "}
                 It is highly recommended to bring a classmate or friend to the
                 meetup.
               </Text>
@@ -339,13 +346,12 @@ export default function TermAndCondition({
           </Text>
           <Text className="text-sm uppercase leading-5 text-gray-600">
             To the maximum extent permitted by applicable law, the UniSuki
-            capstone team, operating as a student educational initiative,
-            shall not be liable for any damages of any kind, including but not
-            limited to direct, indirect, incidental, punitive, or
-            consequential damages, loss of data, loss of income, or physical
-            harm arising from your use of the application or from any
-            transactions initiated within the app. You use the platform at your
-            own sole risk.
+            capstone team, operating as a student educational initiative, shall
+            not be liable for any damages of any kind, including but not limited
+            to direct, indirect, incidental, punitive, or consequential damages,
+            loss of data, loss of income, or physical harm arising from your use
+            of the application or from any transactions initiated within the
+            app. You use the platform at your own sole risk.
           </Text>
         </View>
 
@@ -364,5 +370,5 @@ export default function TermAndCondition({
         </View>
       </ScrollView>
     </View>
-  )
+  );
 }

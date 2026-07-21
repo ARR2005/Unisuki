@@ -19,26 +19,43 @@ export default function SignInForm() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [savePassword, setSavePassword] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
   const isDark = useColorScheme() === "dark";
   const { signIn, isLoading, error } = useSignIn();
 
   async function handleSignIn() {
     setLocalError(null);
+    setEmailError(false);
+    setPasswordError(false);
 
-    if (!email.trim() || !password.trim()) {
-      setLocalError("Please enter your email and password.");
+    if (!email.trim()) {
+      setLocalError("Please enter your email.");
+      setEmailError(true);
+      return;
+    }
+
+    if (!password.trim()) {
+      setLocalError("Please enter your password.");
+      setPasswordError(true);
       return;
     }
 
     try {
-      await signIn(email.trim(), password, {
+      const credential = await signIn(email.trim(), password, {
         persistLogin: savePassword,
       });
 
-      router.replace("/(validationScreen)");
-    } catch (firebaseError: any) {
-      setLocalError(firebaseError?.message ?? "Sign in failed.");
+      // check if verified
+      if (!credential.user.emailVerified) {
+      setLocalError("Please verify your email address before signing in.");
+      setEmailError(true);
+      return; 
+    }
+      
+      router.replace("/(validation)/welcomeScreen");
+    } catch{
     }
   }
 
@@ -52,7 +69,7 @@ export default function SignInForm() {
             isDark ? "text-white" : "text-black"
           }`}
         >
-          Welcome Back
+          Welcome Back!
         </Text>
         <Text className={`text-center ${isDark ? "text-white" : "text-black"}`}>
           Sign in to continue
@@ -61,11 +78,13 @@ export default function SignInForm() {
 
       <View className="mx-2 gap-2">
         <View
-          className={`flex-row items-center rounded-2xl border px-4 py-3 ${
-            isDark
-              ? "border-white/40 bg-white/20"
-              : "border-black/20 bg-white/70"
-          }`}
+          className={`flex-row items-center rounded-2xl border px-4 py-1 ${
+            emailError
+              ? "border-red-500"
+              : isDark
+                ? "border-white/40 bg-black/30"
+                : "border-black/40 bg-white/30"
+          }${isDark ? " bg-black/30" : " bg-white/30"}`}
         >
           <Ionicons
             name="mail-outline"
@@ -84,10 +103,13 @@ export default function SignInForm() {
         </View>
 
         <View
-          className={`flex-row items-center rounded-2xl border px-4 py-3 ${
-            isDark
-              ? "border-white/40 bg-white/20"
-              : "border-black/20 bg-white/70"
+          className={`flex-row items-center rounded-2xl border px-4 py-1 ${
+            emailError
+              ? "border-red-500"
+              : isDark
+                ? "border-white/40 bg-black/30"
+                : "border-black/40 bg-white/30"
+          }${isDark ? " bg-black/30" : " bg-white/30"}
           }`}
         >
           <Ionicons
@@ -107,7 +129,7 @@ export default function SignInForm() {
 
         <View className="flex-column items-start gap-2 justify-between">
           <TouchableOpacity
-            className="self-end"
+            className="self-start"
             onPress={() => setShowForgotModal(true)}
           >
             <Text className="font-semibold text-red-500">Forgot Password?</Text>
@@ -151,7 +173,7 @@ export default function SignInForm() {
         </View>
 
         <TouchableOpacity
-          className={`rounded-2xl px-4 py-4 ${
+          className={`mx-8 mt-2 py-2 rounded-2xl overflow-hidden ${
             isLoading ? "bg-green-700" : "bg-green-600"
           }`}
           onPress={handleSignIn}
@@ -160,12 +182,12 @@ export default function SignInForm() {
           {isLoading ? (
             <View className="flex-row items-center justify-center">
               <ActivityIndicator size="small" color="white" />
-              <Text className="ml-2 font-semibold text-white">
+              <Text className=" text-center font-bold text-lg ml-2">
                 Signing In...
               </Text>
             </View>
           ) : (
-            <Text className="text-center font-semibold text-white">
+            <Text className="text-center font-bold text-lg text-white">
               Sign In
             </Text>
           )}
