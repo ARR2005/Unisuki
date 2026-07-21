@@ -4,6 +4,7 @@ import { useCallback } from "react";
 type PersistedAuthUser = {
   uid: string;
   email: string | null;
+  password?: string | null;
 };
 
 const AUTH_SESSION_KEY = "@unisuki:auth-session";
@@ -13,18 +14,19 @@ export function useAuthPersistence() {
     await AsyncStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(user));
   }, []);
 
-  const getSavedLogin = useCallback(async (): Promise<PersistedAuthUser | null> => {
-    const raw = await AsyncStorage.getItem(AUTH_SESSION_KEY);
+  const getSavedLogin =
+    useCallback(async (): Promise<PersistedAuthUser | null> => {
+      const raw = await AsyncStorage.getItem(AUTH_SESSION_KEY);
 
-    if (!raw) return null;
+      if (!raw) return null;
 
-    try {
-      return JSON.parse(raw) as PersistedAuthUser;
-    } catch {
-      await AsyncStorage.removeItem(AUTH_SESSION_KEY);
-      return null;
-    }
-  }, []);
+      try {
+        return JSON.parse(raw) as PersistedAuthUser;
+      } catch {
+        await AsyncStorage.removeItem(AUTH_SESSION_KEY);
+        return null;
+      }
+    }, []);
 
   const clearLogin = useCallback(async () => {
     await AsyncStorage.removeItem(AUTH_SESSION_KEY);

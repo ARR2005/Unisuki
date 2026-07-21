@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Text,
@@ -10,8 +10,9 @@ import {
   useColorScheme,
 } from "react-native";
 
+import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
 import useSignIn from "@/feature/Auth/hooks/useSignIn";
-import ForgotPasswordModal from "@/feature/components/forgotPasswordModal";
+import ForgotPasswordModal from "@/feature/Auth/components/forgotPasswordModal";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
@@ -22,8 +23,27 @@ export default function SignInForm() {
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
+  const { getSavedLogin, clearLogin } = useAuthPersistence();
   const isDark = useColorScheme() === "dark";
   const { signIn, isLoading, error } = useSignIn();
+
+  useEffect(() => {
+    const loadSavedLogin = async () => {
+      const saved = await getSavedLogin();
+      if (!saved) return;
+
+      if (saved.email) {
+        setEmail(saved.email);
+      }
+
+      if (saved.password) {
+        setPassword(saved.password);
+        setSavePassword(true);
+      }
+    };
+
+    loadSavedLogin();
+  }, [getSavedLogin]);
 
   async function handleSignIn() {
     setLocalError(null);
@@ -47,15 +67,19 @@ export default function SignInForm() {
         persistLogin: savePassword,
       });
 
-      // check if verified
+      if (!savePassword) {
+        await clearLogin();
+      }
+
       if (!credential.user.emailVerified) {
-      setLocalError("Please verify your email address before signing in.");
-      setEmailError(true);
-      return; 
-    }
-      
+        setLocalError("Please verify your email address before signing in.");
+        setEmailError(true);
+        return;
+      }
+
       router.replace("/(validation)/welcomeScreen");
-    } catch{
+    } catch {
+      // error handled by hook
     }
   }
 

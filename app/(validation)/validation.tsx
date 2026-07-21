@@ -24,6 +24,7 @@ import {
 } from "@/feature/validation/hooks/useInsertUserVerification";
 import SubmitPictureScreen from "@/feature/validation/submitPictureScreen";
 import TermAndCondition from "@/feature/validation/termAndCondition";
+import { router } from "expo-router";
 
 export default function Validation() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -71,7 +72,7 @@ export default function Validation() {
         selfie: images.selfie,
       });
       setIsDialogOpen(false);
-      setCurrentStep(1);
+      router.push("/(dashboard)/home")
     } catch {
       // error is handled by the hook
     }
