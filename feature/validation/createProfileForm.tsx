@@ -1,8 +1,10 @@
+import TermAndCondition from "@/feature/validation/termAndCondition";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
     Keyboard,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     ScrollView,
     Text,
@@ -17,6 +19,7 @@ interface FormErrors {
   idNumber?: string;
   age?: string;
   address?: string;
+  general?: string;
 }
 
 export default function CreateProfileForm() {
@@ -31,6 +34,7 @@ export default function CreateProfileForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isAgreed, setIsAgreed] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
@@ -79,6 +83,10 @@ export default function CreateProfileForm() {
 
     if (!formData.address) newErrors.address = "Address is required.";
 
+    if (!isAgreed) {
+      newErrors.general = "You must agree to the Terms and Conditions.";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -113,7 +121,7 @@ export default function CreateProfileForm() {
         automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
       >
         {/* Header */}
-        <View className="my-6 w-full items-center justify-center">
+        <View className="my-4 w-full items-center justify-center gap-2">
           <Text className="text-4xl font-bold tracking-widest text-gray-900">
             Account Setup
           </Text>
@@ -322,27 +330,46 @@ export default function CreateProfileForm() {
 
         {/* Checkbox and Terms */}
         <View className="mb-6 flex-row items-start">
-          <TouchableOpacity
+        <TouchableOpacity
             onPress={() => setIsAgreed(!isAgreed)}
             className="mr-3 mt-0.5"
-          >
+        >
             <Ionicons
-              name={isAgreed ? "checkbox" : "square-outline"}
-              size={24}
-              color={isAgreed ? "#16a34a" : "#9ca3af"}
+            name={isAgreed ? "checkbox" : "square-outline"}
+            size={24}
+            color={isAgreed ? "#16a34a" : "#9ca3af"}
             />
-          </TouchableOpacity>
-          <View className="flex-1">
+        </TouchableOpacity>
+        <View className="flex-1">
             <Text className="text-xs text-gray-600">
-              I agree to the{" "}
-              <Text className="font-bold text-green-600">
+            By checking this box, I agree to the{" "}
+            <Text
+                onPress={() => setShowTerms(true)}
+                className="font-bold text-green-600 underline"
+            >
                 Terms and Conditions
-              </Text>
-              . This information helps other students find and trust you on
-              Unisuki.
             </Text>
-          </View>
+            . This is to help verify my identity and ensure the security of my account.
+            </Text>
+   
+            {errors.general && (
+            <Text className="mt-2 text-xs font-semibold text-red-500">
+                {errors.general}
+            </Text>
+            )}
         </View>
+        </View>
+
+        <Modal visible={showTerms} animationType="slide">
+          <TermAndCondition
+            onClose={() => setShowTerms(false)}
+            onAgree={() => {
+              setIsAgreed(true);
+              setShowTerms(false);
+              setErrors((prev) => ({ ...prev, general: undefined }));
+            }}
+          />
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );

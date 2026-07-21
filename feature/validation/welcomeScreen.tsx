@@ -1,10 +1,10 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function SubmitImageScreen() {
+export default function WelcomeScreen() {
   return (
     <View>
-      <Text>submitGovIdScreen</Text>
+      <Text>welcomeScreen</Text>
     </View>
   )
 }
