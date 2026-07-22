@@ -91,7 +91,6 @@ export default function Validation() {
     }
   };
 
-  // Dynamically render screen based on active step
   const renderStep = () => {
     switch (currentStep) {
       case 1:

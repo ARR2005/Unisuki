@@ -1,28 +1,82 @@
+import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
+import auth from "@/service/firebaseConfigs";
 import { router } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
-import "@/service/firebaseConfigs";
-import { BlurView } from "expo-blur";
-import { useEffect } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  getFirestore,
+  query,
+  where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
+export default function SplashScreen() {
+  const { getSavedLogin, clearLogin } = useAuthPersistence();
+  const [statusMessage, setStatusMessage] = useState(
+    "Checking your saved session...",
+  );
 
+  useEffect(() => {
+    let isMounted = true;
 
-function RedirectToAuth() {
-  return router.replace("/(auth)");
-}
+    const restoreSession = async () => {
+      try {
+        const savedLogin = await getSavedLogin();
 
-export default function AuthLayout() {
+        if (!savedLogin?.email || !savedLogin?.password) {
+          if (isMounted) {
+            router.replace("/(auth)");
+          }
+          return;
+        }
 
+        setStatusMessage("Restoring your session...");
+
+        const credential = await signInWithEmailAndPassword(
+          auth,
+          savedLogin.email,
+          savedLogin.password,
+        );
+
+        const db = getFirestore();
+        const verificationQuery = query(
+          collection(db, "userVerifications"),
+          where("uid", "==", credential.user.uid),
+        );
+        const verificationSnapshot = await getDocs(verificationQuery);
+
+        const hasCompleteSetup = verificationSnapshot.docs.some((doc) => {
+          const data = doc.data() as { isSetupComplete?: boolean };
+          return data.isSetupComplete === true;
+        });
+
+        if (!isMounted) return;
+
+        if (hasCompleteSetup) {
+          router.replace("/(dashboard)/home");
+        } else {
+          router.replace("/(validation)/welcomeScreen");
+        }
+      } catch {
+        if (!isMounted) return;
+        await clearLogin();
+        router.replace("/(auth)");
+      }
+    };
+
+    restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clearLogin, getSavedLogin]);
 
   return (
-    <View>
-      <TouchableOpacity
-        className="bg-blue-500 p-4 w-32 rounded"
-        onPress={() => {
-          RedirectToAuth();
-        }}
-      >
-        <Text>Login</Text>
-      </TouchableOpacity>
+    <View className="flex-1 items-center justify-center bg-white">
+      <ActivityIndicator size="large" color="#16a34a" />
+      <Text className="mt-4 text-base text-gray-600">{statusMessage}</Text>
     </View>
   );
 }

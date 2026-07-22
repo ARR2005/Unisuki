@@ -5,6 +5,7 @@ type PersistedAuthUser = {
   uid: string;
   email: string | null;
   password?: string | null;
+  token?: string | null;
 };
 
 const AUTH_SESSION_KEY = "@unisuki:auth-session";

@@ -41,10 +41,13 @@ export default function useSignIn() {
       );
 
       if (options?.persistLogin) {
+        const token = await userCredential.user.getIdToken();
+
         await saveLogin({
           uid: userCredential.user.uid,
           email: userCredential.user.email,
           password,
+          token,
         });
       }
 

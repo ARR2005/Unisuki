@@ -10,9 +10,16 @@ import {
   useColorScheme,
 } from "react-native";
 
+import ForgotPasswordModal from "@/feature/Auth/components/forgotPasswordModal";
 import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
 import useSignIn from "@/feature/Auth/hooks/useSignIn";
-import ForgotPasswordModal from "@/feature/Auth/components/forgotPasswordModal";
+import {
+  collection,
+  getDocs,
+  getFirestore,
+  query,
+  where,
+} from "firebase/firestore";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
@@ -21,7 +28,6 @@ export default function SignInForm() {
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [savePassword, setSavePassword] = useState(false);
   const [emailError, setEmailError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
 
   const { getSavedLogin, clearLogin } = useAuthPersistence();
   const isDark = useColorScheme() === "dark";
@@ -48,7 +54,6 @@ export default function SignInForm() {
   async function handleSignIn() {
     setLocalError(null);
     setEmailError(false);
-    setPasswordError(false);
 
     if (!email.trim()) {
       setLocalError("Please enter your email.");
@@ -58,7 +63,6 @@ export default function SignInForm() {
 
     if (!password.trim()) {
       setLocalError("Please enter your password.");
-      setPasswordError(true);
       return;
     }
 
@@ -72,12 +76,30 @@ export default function SignInForm() {
       }
 
       if (!credential.user.emailVerified) {
-        setLocalError("Please verify your email address before signing in.");
+        setLocalError(
+          "Check youre email and verify your account before signing in.",
+        );
         setEmailError(true);
         return;
       }
 
-      router.replace("/(validation)/welcomeScreen");
+      const db = getFirestore();
+      const verificationQuery = query(
+        collection(db, "userVerifications"),
+        where("uid", "==", credential.user.uid),
+      );
+      const verificationSnapshot = await getDocs(verificationQuery);
+
+      const hasCompleteSetup = verificationSnapshot.docs.some((doc) => {
+        const data = doc.data() as { isSetupComplete?: boolean };
+        return data.isSetupComplete === true;
+      });
+
+      if (hasCompleteSetup) {
+        router.replace("/(dashboard)/home");
+      } else {
+        router.replace("/(validation)/welcomeScreen");
+      }
     } catch {
       // error handled by hook
     }
