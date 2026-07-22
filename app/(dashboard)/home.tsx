@@ -1,12 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Text, View } from "react-native";
+import Header from "@/components/header";
 
 export default function Home() {
+  // 1. Create a state to hold the mode ('buyer' | 'seller')
+  const [activeMode, setActiveMode] = useState<"buyer" | "seller">("buyer");
+
   return (
-    // Use `bg-transparent` to allow the layout's background image to show through.
-    // We can also center the content for now.
-    <View className="flex-1 items-center justify-center bg-transparent">
-      <Text className="text-white text-2xl">Home Screen</Text>
+    <View className="flex-1 justify-start bg-transparent">
+      {/* 2. Pass the handler to receive the updated mode */}
+      <Header
+        activeMode={activeMode}
+        onModeChange={(mode) => setActiveMode(mode)}
+      />
+
+      {/* 3. Conditional logic based on mode */}
+      <View className="flex-1 p-5">
+        {activeMode === "buyer" ? (
+          <View>
+            <
+          </View>
+        ) : (
+          <View>
+            <Text className="text-lg font-bold text-gray-800">
+              Seller Dashboard
+            </Text>
+
+          </View>
+        )}
+      </View>
     </View>
   );
 }
