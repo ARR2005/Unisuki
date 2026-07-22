@@ -1,8 +1,12 @@
 import { useImage } from "@/context/storeImage";
-// import { uploadImageToCloudinary } from "@/services/config/cloudinaryConfig";
-// import UserProfileService from "@/services/profile/UserProfileService";
+import auth from "@/service/firebaseConfigs";
 import * as ImagePicker from "expo-image-picker";
-import { getAuth } from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  getFirestore,
+  serverTimestamp,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export interface PostData {
@@ -30,12 +34,13 @@ export interface PostData {
 export const usePostForm = () => {
   const { capturedImage, setIsUploadingImage, setUploadError, clearImage } =
     useImage();
-//   const DatabaseService = useDatabase();
+  //   const DatabaseService = useDatabase();
   const [formData, setFormData] = useState<PostData>({
     title: "",
     price: "",
     description: "",
     tags: [],
+    category: "Miscellaneous",
     type: "miscellaneous",
     quantity: 1,
     additionalImages: [],
@@ -51,22 +56,17 @@ export const usePostForm = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Check authentication status on mount and when auth state changes
-  // useEffect(() => {
-  //   const auth = getAuth();
+  useEffect(() => {
+    setIsAuthenticated(!!auth.currentUser);
+    setCurrentUser(auth.currentUser);
 
-  //   // Set initial state
-  //   setIsAuthenticated(!!auth.currentUser);
-  //   setCurrentUser(auth.currentUser);
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsAuthenticated(!!user);
+      setCurrentUser(user);
+    });
 
-  //   // Listen for auth state changes
-  //   const unsubscribe = auth.onAuthStateChanged((user) => {
-  //     setIsAuthenticated(!!user);
-  //     setCurrentUser(user);
-  //   });
-
-  //   return () => unsubscribe();
-  // }, []);
+    return () => unsubscribe();
+  }, []);
 
   const updateFormField = (field: keyof PostData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -95,6 +95,7 @@ export const usePostForm = () => {
       price: "",
       description: "",
       tags: [],
+      category: "Miscellaneous",
       type: "miscellaneous",
       quantity: 1,
       additionalImages: [],
@@ -127,8 +128,8 @@ export const usePostForm = () => {
     if (isNaN(priceNum) || priceNum <= 0) {
       return "Price must be a valid positive number";
     }
-    if (priceNum >= 100000) {
-      return "Price must be under ₱100,000";
+    if (priceNum >= 50000) {
+      return "Price must be under ₱50,000";
     }
 
     // Description validation
@@ -181,84 +182,48 @@ export const usePostForm = () => {
       setIsUploadingImage(true);
       setPublishSuccess(false);
 
-      // Step 1: Upload main image to Cloudinary
-    //   const imageUrl = await uploadImageToCloudinary(capturedImage.uri);
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        throw new Error("Please sign in before publishing your item.");
+      }
 
-      // Step 1b: Upload additional images to Cloudinary
-      let additionalImageUrls: string[] = [];
-    //   if (formData.additionalImages && formData.additionalImages.length > 0) {
-    //     for (const imageUri of formData.additionalImages) {
-    //       // Only upload if it's a local file (not already a URL)
-    //       if (imageUri.startsWith("file://") || imageUri.startsWith("/")) {
-    //         try {
-    //           const uploadedUrl = await uploadImageToCloudinary(imageUri);
-    //           additionalImageUrls.push(uploadedUrl);
-    //         } catch (error) {
-    //           // Continue with other images if one fails
-    //         }
-    //       } else {
-    //         additionalImageUrls.push(imageUri);
-    //       }
-    //     }
-    //   }
+      const productData = {
+        title: formData.title.trim(),
+        price: parseFloat(formData.price),
+        description: formData.description.trim(),
+        imageUri: capturedImage.uri,
+        tags: formData.tags,
+        type: formData.type || "miscellaneous",
+        quantity: formData.quantity || 1,
+        category: formData.category || "Miscellaneous",
+        additionalImages: formData.additionalImages || [],
+        ...(formData.category === "Clothes"
+          ? {
+              sizes: formData.sizes?.trim() || "",
+              styles: formData.styles?.trim() || "",
+            }
+          : {}),
+        ...(formData.category === "Shoes"
+          ? { shoeSize: formData.shoeSize?.trim() || "" }
+          : {}),
+        ...(formData.category === "Stationery"
+          ? {
+              amount: formData.amount?.trim() || "",
+              stationeryType: formData.stationeryType?.trim() || "",
+            }
+          : {}),
+        publishedAt: serverTimestamp(),
+        userId,
+        status: "active",
+      };
 
-    //   // Step 2: Get seller name from profile
-    //   let sellerName =
-    //     currentUser?.displayName || currentUser?.email || "Anonymous Seller";
-    //   try {
-    //     const userProfile = await UserProfileService.getUserProfile();
-    //     if (userProfile?.username) {
-    //       sellerName = userProfile.username;
-    //     }
-    //   } catch (error) {
-    //     // Use fallback name if profile fetch fails
-    //   }
+      const db = getFirestore();
+      await addDoc(collection(db, "user", userId, "itemPosted"), productData);
 
-    //   // Step 3: Prepare product data for Firebase
-    //   const productData: any = {
-    //     title: formData.title,
-    //     price: parseFloat(formData.price),
-    //     description: formData.description,
-    //     image_uri: imageUrl, // Cloudinary URL
-    //     type: formData.type || "miscellaneous",
-    //     quantity: formData.quantity || 1,
-    //     tags: formData.tags,
-    //     category: formData.category || "Miscellaneous",
-    //     sellerName: sellerName,
-    //   };
+      setIsUploadingImage(false);
+      setUploadError(null);
+      setPublishSuccess(true);
 
-    //   // Add category-specific fields
-    //   if (formData.category === "Clothes") {
-    //     // Only add sizes and styles if they are provided
-    //     if (formData.sizes?.trim()) {
-    //       productData.sizes = formData.sizes;
-    //     }
-    //     if (formData.styles?.trim()) {
-    //       productData.styles = formData.styles;
-    //     }
-    //   } else if (formData.category === "Shoes") {
-    //     productData.shoeSize = formData.shoeSize;
-    //   } else if (formData.category === "Stationery") {
-    //     productData.amount = formData.amount;
-    //     productData.stationeryType = formData.stationeryType;
-    //   }
-
-    //   // Add publish datetime
-    //   productData.publishedAt = formData.publishedAt || new Date();
-
-    //   // Add additional images if any were uploaded
-    //   if (additionalImageUrls.length > 0) {
-    //     productData.additionalImages = additionalImageUrls;
-    //   }
-
-    //   // Step 4: Save to Firebase under user's itemsPosted
-    //   const productId = await DatabaseService.addProduct(productData);
-
-    //   setIsUploadingImage(false);
-    //   setUploadError(null);
-    //   setPublishSuccess(true);
-
-      // Clear form for next post
       resetForm();
       return true;
     } catch (error) {
@@ -288,10 +253,19 @@ export const usePostForm = () => {
 
   const pickAdditionalImages = async () => {
     try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission = await ImagePicker.getMediaLibraryPermissionsAsync();
+      let status = permission.status;
+
       if (status !== "granted") {
-        setUploadError("Camera roll permissions are required to add images");
+        const requestPermission =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        status = requestPermission.status;
+      }
+
+      if (status !== "granted") {
+        setUploadError(
+          "Photo access is required to add images. Please allow access in your device settings.",
+        );
         return;
       }
 
@@ -311,7 +285,7 @@ export const usePostForm = () => {
           additionalImages: combinedImages,
         }));
       }
-    } catch (error) {
+    } catch {
       setUploadError("Failed to pick images");
     }
   };

@@ -24,15 +24,15 @@ export default function PostProduct() {
                         <Ionicons name="image-outline" size={82} color={isDark ? "#fff" : "#000"} />
                     </View>
                     <Text className={`text-3xl font-bold ${isDark ? "text-white" : "text-gray-900"} text-center`}>Add Product Photo</Text>
-                    <Separator className="my-2" />
-                    <Text className={`text-1xl ${isDark ? "text-white" : "text-gray-600"} text-center mt-2 leading-5`}>
+                    <Separator className="w-full bg-black" />
+                    <Text className={`text-1xl ${isDark ? "text-white" : "text-gray-600"} text-center mt-1 leading-5`}>
                         Post product with a clear image. You can take a new photo or choose one from your gallery.
                     </Text>
                 </View>
             </View>
 
             {/* Selectable Options Section */}
-            <View style={styles.cardContainer} className="gap-1" >
+            <View style={styles.cardContainer} className="" >
                 {/* Camera Option */}
                 <TouchableOpacity
                     onPress={useCamera}

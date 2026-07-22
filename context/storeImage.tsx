@@ -50,5 +50,10 @@ export const ImageProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useImage = () => {
   const context = useContext(StoreImage);
+
+  if (!context) {
+    throw new Error("useImage must be used within an ImageProvider");
+  }
+
   return context;
 };
