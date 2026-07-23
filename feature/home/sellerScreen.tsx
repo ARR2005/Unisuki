@@ -52,9 +52,9 @@ export default function SellerScreen() {
   }
 
   return (
-    <View className="flex-1 w-full bg-white px-4 pt-2">
+    <View className="flex-1 w-full  pt-2 bg-white rounded-t-2xl    ">
       {products.length === 0 ? (
-        <View className="flex-1 w-full items-center justify-center p-6">
+        <View className="flex-1 w-full items-center justify-center ">
           <Ionicons name="pricetag-outline" size={36} color="#9ca3af" />
           <Text className="mt-3 text-gray-700 text-lg font-semibold">No listings yet</Text>
           <Text className="mt-1 text-gray-500 text-sm">Products you post will appear here.</Text>
@@ -62,7 +62,7 @@ export default function SellerScreen() {
       ) : (
         <View className="flex-1 w-full">
           {/* Table Header */}
-          <View className="flex-row items-center justify-between w-full py-3 border-b border-gray-200 bg-white">
+          <View className="flex-row items-center justify-between w-full py-3 border-b">
             <Text className="w-12 font-bold text-gray-500 text-xs text-center">ITEM</Text>
             <Text className="flex-1 font-bold text-gray-500 text-xs ml-3">TITLE</Text>
             <Text className="w-20 font-bold text-gray-500 text-xs text-center">PRICE</Text>
@@ -82,7 +82,7 @@ export default function SellerScreen() {
                 <View className="flex-row items-center justify-between w-full py-3 border-b border-gray-100">
                   <View className="w-12 items-center justify-center">
                     {imageUri ? (
-                      <Image source={{ uri: imageUri }} className="w-12 h-12 rounded-lg bg-gray-200" />
+                      <Image source={{ uri: imageUri }} className="w-12 h-12 rounded-lg" />
                     ) : (
                       <View className="w-12 h-12 rounded-lg bg-gray-200 items-center justify-center">
                         <Ionicons name="image-outline" size={22} color="#6b7280" />

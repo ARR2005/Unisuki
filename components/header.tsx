@@ -46,14 +46,14 @@ export default function Header() {
   };
 
   return (
-    <View className="w-full bg-white px-5 pt-12 pb-4 border-b border-gray-100 shadow-sm">
+    <View className="w-ful px-5 pt-6 border-gray-100 pb-4">
       <View className="flex-row justify-between items-start">
         <View>
-          <Text className="text-gray-500 text-sm font-medium">Hello!</Text>
+          <Text className="text-green-800 text-lg font-medium">Hello welcome back!</Text>
           {loadingUser ? (
             <ActivityIndicator size="small" color="#4F46E5" className="self-start mt-1" />
           ) : (
-            <Text className="text-gray-900 text-xl font-bold mt-0.5">
+            <Text className="text-black text-4xl ml-6 font-bold">
               {username || "Guest"}
             </Text>
           )}
@@ -61,7 +61,7 @@ export default function Header() {
 
         <TouchableOpacity
           onPress={handleNotificationPress}
-          className="p-2 bg-gray-50 rounded-full border border-gray-100"
+          className="p-3 bg-gray-50 rounded-full border border-gray-100"
           activeOpacity={0.7}
         >
           <Ionicons name="notifications-outline" size={22} color="#1F2937" />

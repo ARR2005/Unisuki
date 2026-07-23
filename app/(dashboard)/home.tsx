@@ -1,13 +1,41 @@
 import Header from "@/components/header";
 import BuyerScreen from "@/feature/home/buyerScreen";
 import SellerScreen from "@/feature/home/sellerScreen";
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import SearchBar from "@/feature/home/components/searchBar"
+import Categories from "@/feature/home/components/categories"
 
 type Mode = "buyer" | "seller";
+const ACTIVE_MODE_STORAGE_KEY = "@unisuki:active-mode";
 
 export default function Home() {
   const [activeMode, setActiveMode] = useState<Mode>("buyer");
+
+  useEffect(() => {
+    const loadActiveMode = async () => {
+      try {
+        const savedMode = await AsyncStorage.getItem(ACTIVE_MODE_STORAGE_KEY);
+        if (savedMode === "buyer" || savedMode === "seller") {
+          setActiveMode(savedMode);
+        }
+      } catch (error) {
+        console.warn("Unable to restore the selected mode:", error);
+      }
+    };
+
+    loadActiveMode();
+  }, []);
+
+  const selectMode = async (mode: Mode) => {
+    setActiveMode(mode);
+    try {
+      await AsyncStorage.setItem(ACTIVE_MODE_STORAGE_KEY, mode);
+    } catch (error) {
+      console.warn("Unable to save the selected mode:", error);
+    }
+  };
 
   const renderModeButton = (mode: Mode, label: string) => {
     const isActive = activeMode === mode;
@@ -17,7 +45,7 @@ export default function Home() {
         key={mode}
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        onPress={() => setActiveMode(mode)}
+        onPress={() => selectMode(mode)}
         style={[styles.modeButton, isActive && styles.activeModeButton]}
       >
         <Text style={[styles.modeLabel, isActive && styles.activeModeLabel]}>
@@ -29,13 +57,14 @@ export default function Home() {
 
   return (
     <View style={styles.page}>
-      <Header />
-      <View style={styles.content}>
-        <View style={styles.modeSwitcher}>
-          {renderModeButton("buyer", "BUYER")}
-          {renderModeButton("seller", "SELLER")}
+      <View style={styles.content} >
+        <Header />
+        <View className="pb-4 rounded-b-full ">
+          <View style={styles.modeSwitcher} >
+            {renderModeButton("buyer", "BUYER")}
+            {renderModeButton("seller", "SELLER")}
+          </View>
         </View>
-
         <View style={styles.modeContent}>
           {activeMode === "buyer" ? <BuyerScreen /> : <SellerScreen />}
         </View>
@@ -46,12 +75,12 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   page: { flex: 1 },
-  content: { flex: 1, backgroundColor: "#ffffff" },
+  content: { flex: 1 },
   modeSwitcher: {
     alignSelf: "center",
     flexDirection: "row",
     width: 240,
-    marginTop: 16,
+
     padding: 4,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -74,5 +103,5 @@ const styles = StyleSheet.create({
   },
   modeLabel: { color: "#6b7280", fontSize: 12, fontWeight: "600" },
   activeModeLabel: { color: "#000000" },
-  modeContent: { flex: 1, alignItems: "center", justifyContent: "center" },
+  modeContent: { flex: 1,  },
 });
