@@ -1,16 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { TextInput, View } from "react-native";
+import { TextInput, View, Pressable } from "react-native";
 
 interface SearchBarProps {
   placeholder?: string;
+  value?: string;
   onChangeText?: (text: string) => void;
+  onClear?: () => void;
   isDark: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = "Search products...",
+  value,
   onChangeText,
+  onClear,
   isDark,
 }) => {
   return (
@@ -34,12 +38,22 @@ const SearchBar: React.FC<SearchBarProps> = ({
         />
         <TextInput
           placeholder={placeholder}
+          value={value}
           className={`ml-3 flex-1 text-base ${
             isDark ? "text-white" : "text-gray-900"
           }`}
           placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
           onChangeText={onChangeText}
         />
+        {value ? (
+          <Pressable onPress={onClear}>
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={isDark ? "#9CA3AF" : "#6B7280"}
+            />
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

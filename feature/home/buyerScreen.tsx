@@ -1,15 +1,30 @@
-import { View, Text, ActivityIndicator, FlatList, ScrollView } from 'react-native'
-import React from 'react'
-import Carousel from "@/feature/home/components/carousel"
-import Categories from "@/feature/home/components/categories"
-import ProductCard from "@/feature/home/components/productCard"
-import SearchBar from "@/feature/home/components/searchBar"
+import React, { useState, useMemo } from "react";
+import { View, Text, ActivityIndicator, FlatList } from "react-native";
+import Carousel from "@/feature/home/components/carousel";
+import CategoryMenu from "@/feature/home/components/categories";
+import ProductCard from "@/feature/home/components/productCard";
+import SearchBar from "@/feature/home/components/searchBar";
 import { useFetchBuyerProduct } from "@/feature/home/hooks/useFetchBuyerProduct";
-
-
 
 export default function BuyerScreen() {
   const { products, loading, error } = useFetchBuyerProduct();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Client-side filtering for real-time responsiveness
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.title
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+      const matchesCategory = selectedCategory
+        ? product.category?.toLowerCase() === selectedCategory.toLowerCase()
+        : true;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
   if (loading) {
     return (
@@ -26,28 +41,48 @@ export default function BuyerScreen() {
       </View>
     );
   }
-  
+
   return (
-  <ScrollView className="flex-1">
     <View className="flex-1 bg-white border-1 rounded-t-2xl">
-      <View>
-        <Text className="ml-6 mb-2 mt-4">What product do you want?</Text>
-        <SearchBar isDark={false} />
-      </View>
-
-      <Carousel />
-      
-      <Categories />
-
       <FlatList
         key="grid-2"
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96 }}
         columnWrapperStyle={{ justifyContent: "space-between", gap: 12 }}
+        ListHeaderComponent={
+          <View className="mb-4">
+            <Text className="ml-2 mb-2 mt-4 font-semibold text-gray-800">
+              What product do you want?
+            </Text>
+            
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClear={() => setSearchQuery("")}
+              isDark={false}
+            />
+
+            {/* FULL-WIDTH CAROUSEL WRAPPER */}
+            {/* -mx-4 offsets the parent FlatList padding (16px = 4 tailwind units) */}
+            <View className="-mx-4 my-3">
+              <Carousel />
+            </View>
+
+            <CategoryMenu
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="py-12 items-center">
+            <Text className="text-gray-500 text-base">No products found</Text>
+          </View>
+        }
         renderItem={({ item }) => (
-          <View className="flex-1">
+          <View className="flex-1 mb-3">
             <ProductCard
               title={item.title}
               price={item.price}
@@ -58,10 +93,6 @@ export default function BuyerScreen() {
           </View>
         )}
       />
-        <View className="h-24">
-        <View/>
-      </View>
     </View>
-  </ScrollView>
-  )
+  );
 }
