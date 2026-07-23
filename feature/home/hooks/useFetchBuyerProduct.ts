@@ -14,6 +14,7 @@ export type Product = {
   condition?: string;
   sellerName?: string;
   userId: string; // The exact parent user document ID
+  isReserved?: boolean; // Flag indicating if item is reserved
   tags?: {
     title?: string;
     type?: string;
@@ -44,16 +45,20 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
           return {
             id: docSnap.id,
             ...(data as Omit<Product, "id">),
-            userId: sellerUidFromPath, // Always guarantees the correct parent path ID
+            userId: sellerUidFromPath,
+            isReserved: Boolean(data.isReserved),
             title: data.tags?.title || data.title || "Untitled Product",
             imageUrl: data.imageUrl || data.imageUri || "https://picsum.photos/id/26/400/300",
           };
         });
 
-        // Filter out or filter for products posted by current user
         const filteredProducts = fetchedProducts.filter((product) => {
           const isMyPost = product.userId === currentUserId;
-          return excludeOwnProducts ? !isMyPost : isMyPost;
+          const isAvailable = !product.isReserved;
+
+          return excludeOwnProducts
+            ? !isMyPost && isAvailable
+            : isMyPost;
         });
 
         setProducts(filteredProducts);

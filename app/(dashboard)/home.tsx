@@ -4,8 +4,7 @@ import SellerScreen from "@/feature/home/sellerScreen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import SearchBar from "@/feature/home/components/searchBar"
-import Categories from "@/feature/home/components/categories"
+
 
 type Mode = "buyer" | "seller";
 const ACTIVE_MODE_STORAGE_KEY = "@unisuki:active-mode";

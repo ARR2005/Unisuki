@@ -10,7 +10,17 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
+import { auth, db } from "@/service/firebaseConfigs";
 
 export default function ProductDetailsScreen() {
   const router = useRouter();
@@ -51,16 +61,143 @@ export default function ProductDetailsScreen() {
   const transactionFee = 5;
   const total = price + transactionFee;
 
+  // 1. Handle Product Reservation Logic
   const handleReserve = async () => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      alert("Please log in to reserve this item.");
+      return;
+    }
+
+    if (currentUser.uid === sellerId) {
+      alert("You cannot reserve your own listing.");
+      return;
+    }
+
     setIsReserving(true);
-    // Reserve item logic...
-    setIsReserving(false);
+
+    try {
+      // Step A: Mark item as reserved in Firestore subcollection
+      const productRef = doc(db, "user", sellerId, "itemPosted", id);
+      await updateDoc(productRef, {
+        isReserved: true,
+      });
+
+      // Step B: Create deterministic reservation chat session
+      const chatId = `${currentUser.uid}_${sellerId}_${id}_res`;
+      const chatRef = doc(db, "chats", chatId);
+
+      await setDoc(
+        chatRef,
+        {
+          chatId,
+          participants: [currentUser.uid, sellerId],
+          buyerId: currentUser.uid,
+          sellerId: sellerId,
+          productId: id,
+          type: "reservation",
+          updatedAt: serverTimestamp(),
+          lastMessage: `[Reservation Request] ${title}`,
+          reservation: {
+            status: "pending",
+            itemTitle: title,
+            itemPrice: price,
+            transactionFee: transactionFee,
+            totalPrice: total,
+            itemImage: image_uri || "",
+            createdAt: serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+
+      // Step C: Send initial system message if room is new
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      const existingMessages = await getDocs(messagesRef);
+
+      if (existingMessages.empty) {
+        await addDoc(messagesRef, {
+          senderId: currentUser.uid,
+          text: `Hi! I would like to reserve "${title}" for ₱${total.toFixed(2)}.`,
+          createdAt: serverTimestamp(),
+          systemMessage: true,
+        });
+      }
+
+      // Step D: Navigate to reservation chat
+      router.push({
+        pathname: "/(chat)/[chatId]",
+        params: { chatId, isReservation: "true" },
+      });
+    } catch (err) {
+      console.error("Error creating reservation:", err);
+      alert("Could not process reservation. Please try again.");
+    } finally {
+      setIsReserving(false);
+    }
   };
 
+  // 2. Handle Normal Direct Chat Logic
   const handleContactSeller = async () => {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      alert("Please log in to contact the seller.");
+      return;
+    }
+
+    if (currentUser.uid === sellerId) {
+      alert("You cannot start a chat with yourself.");
+      return;
+    }
+
     setIsInitiatingChat(true);
-    // Contact seller logic...
-    setIsInitiatingChat(false);
+
+    try {
+      // Step A: Create deterministic direct chat session
+      const chatId = `${currentUser.uid}_${sellerId}_${id}_direct`;
+      const chatRef = doc(db, "chats", chatId);
+
+      await setDoc(
+        chatRef,
+        {
+          chatId,
+          participants: [currentUser.uid, sellerId],
+          buyerId: currentUser.uid,
+          sellerId: sellerId,
+          productId: id,
+          type: "direct",
+          updatedAt: serverTimestamp(),
+          lastMessage: `Inquired about ${title}`,
+        },
+        { merge: true }
+      );
+
+      // Step B: Send initial inquiry message if room is new
+      const messagesRef = collection(db, "chats", chatId, "messages");
+      const existingMessages = await getDocs(messagesRef);
+
+      if (existingMessages.empty) {
+        await addDoc(messagesRef, {
+          senderId: currentUser.uid,
+          text: `Hi! I'm interested in "${title}". Is this still available?`,
+          createdAt: serverTimestamp(),
+          systemMessage: false,
+        });
+      }
+
+      // Step C: Navigate to direct chat
+      router.push({
+        pathname: "/(chat)/[chatId]",
+        params: { chatId, isReservation: "false" },
+      });
+    } catch (err) {
+      console.error("Error initiating chat:", err);
+      alert("Could not start conversation. Please try again.");
+    } finally {
+      setIsInitiatingChat(false);
+    }
   };
 
   // Gallery image setup

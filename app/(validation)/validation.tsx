@@ -72,7 +72,7 @@ export default function Validation() {
         selfie: images.selfie,
       });
       setIsDialogOpen(false);
-      router.push("/(dashboard)/home")
+      router.replace("/(dashboard)/home");
     } catch {
       // error is handled by the hook
     }
@@ -127,7 +127,7 @@ export default function Validation() {
               />
             ))}
           </View>
-          
+
           <View className="w-full flex-1">{renderStep()}</View>
 
           <View className="pt-2 pb-10 w-full border-t border-slate-200 dark:border-slate-800 flex-row items-center justify-between px-6">
