@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/service/firebaseConfigs";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 export type ProductDetail = {
   id: string;
@@ -22,7 +22,9 @@ export type ProductDetail = {
   imageUri?: string;
   imageUrl?: string;
   additionalImages?: string[];
-  tags?: { title?: string; type?: string } | Array<{ title?: string; type?: string }>;
+  tags?:
+    | { title?: string; type?: string }
+    | { title?: string; type?: string }[];
   publishedAt?: {
     seconds: number;
     nanoseconds: number;
@@ -34,7 +36,10 @@ type UseProductDetailOptions = {
   sellerId?: string;
 };
 
-export function useProductDetail({ productId, sellerId }: UseProductDetailOptions = {}) {
+export function useProductDetail({
+  productId,
+  sellerId,
+}: UseProductDetailOptions = {}) {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,23 +72,57 @@ export function useProductDetail({ productId, sellerId }: UseProductDetailOption
           const mainImage =
             rawData.imageUrl ||
             rawData.imageUri ||
-            (Array.isArray(rawData.additionalImages) && rawData.additionalImages[0]) ||
+            (Array.isArray(rawData.additionalImages) &&
+              rawData.additionalImages[0]) ||
             "";
 
           // Resolve Title across potential object/array data formats
           const resolvedTitle =
-            (typeof rawData.tags === "object" && !Array.isArray(rawData.tags) && rawData.tags?.title) ||
+            (typeof rawData.tags === "object" &&
+              !Array.isArray(rawData.tags) &&
+              rawData.tags?.title) ||
             (Array.isArray(rawData.tags) && rawData.tags[0]?.title) ||
             rawData.title ||
             rawData.description ||
             "Untitled Item";
 
-          setProduct({
-            id: docSnap.id,
-            ...rawData,
-            title: resolvedTitle,
-            imageUrl: mainImage,
-          } as ProductDetail);
+          const resolveSellerName = async () => {
+            let resolvedSellerName = rawData.sellerName || rawData.seller || "";
+
+            if (!resolvedSellerName) {
+              try {
+                const sellerDocRef = doc(
+                  db,
+                  "userVerifications",
+                  cleanSellerId,
+                );
+                const sellerDocSnap = await getDoc(sellerDocRef);
+                if (sellerDocSnap.exists()) {
+                  const sellerData = sellerDocSnap.data();
+                  resolvedSellerName =
+                    sellerData?.profileData?.username ||
+                    sellerData?.profileData?.name ||
+                    sellerData?.name ||
+                    "";
+                }
+              } catch (profileError) {
+                console.warn(
+                  "Could not load seller profile name:",
+                  profileError,
+                );
+              }
+            }
+
+            setProduct({
+              id: docSnap.id,
+              ...rawData,
+              title: resolvedTitle,
+              imageUrl: mainImage,
+              sellerName: resolvedSellerName || "Seller",
+            } as ProductDetail);
+          };
+
+          resolveSellerName();
         } else {
           setProduct(null);
           setError("Listing not found.");
@@ -94,7 +133,7 @@ export function useProductDetail({ productId, sellerId }: UseProductDetailOption
         console.error("❌ Firestore read error:", err);
         setError("Failed to fetch listing details.");
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -107,7 +146,9 @@ export function useProductDetail({ productId, sellerId }: UseProductDetailOption
 
   let publishedDateLabel = "";
   if (product?.publishedAt?.seconds) {
-    publishedDateLabel = new Date(product.publishedAt.seconds * 1000).toLocaleDateString("en-US", {
+    publishedDateLabel = new Date(
+      product.publishedAt.seconds * 1000,
+    ).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -121,7 +162,9 @@ export function useProductDetail({ productId, sellerId }: UseProductDetailOption
     title: product?.title,
     price,
     image_uri: product?.imageUrl || product?.imageUri,
-    additionalImages: Array.isArray(product?.additionalImages) ? product.additionalImages : [],
+    additionalImages: Array.isArray(product?.additionalImages)
+      ? product.additionalImages
+      : [],
     description: product?.description,
     sellerName: product?.sellerName,
     category: product?.category,

@@ -17,42 +17,51 @@ export default function ScanScreen() {
   const [isScanning, setIsScanning] = useState(true);
 
   useEffect(() => {
-    if (!permission) {
-      return;
-    }
-
+    if (!permission) return;
     if (!permission.granted) {
       requestPermission();
     }
   }, [permission, requestPermission]);
 
   const handleBarcodeScanned = ({ data }: { data: string }) => {
-    if (!isScanning) {
-      return;
-    }
-
+    if (!isScanning) return;
     setIsScanning(false);
 
     try {
       const parsed = JSON.parse(data);
 
       if (!parsed || typeof parsed !== "object") {
-        throw new Error("Invalid payload");
+        throw new Error("Invalid payload format");
       }
 
+      const payload = JSON.stringify(parsed);
+
       router.push({
-        pathname: "/(scanner)/summary",
+        pathname: "/(scanner)/summary" as any,
         params: {
-          payload: JSON.stringify(parsed),
+          payload,
+          chatId: parsed.chatId || "",
+          reservationId: parsed.reservationId || "",
+          productId: parsed.productId || "",
+          sellerId: parsed.sellerId || "",
+          buyerId: parsed.buyerId || "",
+          itemTitle:
+            parsed.itemTitle || parsed.title || parsed.productName || "",
+          sellerName: parsed.sellerName || parsed.seller || "",
+          itemPrice: String(
+            parsed.itemPrice || parsed.price || parsed.amount || "",
+          ),
+          transactionFee: String(parsed.transactionFee || parsed.fee || ""),
+          totalPrice: String(parsed.totalPrice || parsed.total || ""),
         },
       });
     } catch (error) {
       console.error("QR scan error:", error);
       Alert.alert(
-        "Invalid QR code",
+        "Invalid QR Code",
         "The scanned code did not contain valid transaction data. Please try again.",
+        [{ text: "OK", onPress: () => setIsScanning(true) }],
       );
-      setIsScanning(true);
     }
   };
 
@@ -75,7 +84,7 @@ export default function ScanScreen() {
         </Text>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => requestPermission()}   
+          onPress={() => requestPermission()}
         >
           <Text style={styles.buttonText}>Allow Camera</Text>
         </TouchableOpacity>
@@ -91,12 +100,12 @@ export default function ScanScreen() {
         style={styles.camera}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-        onBarcodeScanned={handleBarcodeScanned}
+        onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
       />
 
       <View style={styles.overlay}>
         <View style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Scan seller QR</Text>
+          <Text style={styles.headerTitle}>Scan Seller QR</Text>
           <Text style={styles.headerSubtitle}>
             Point the camera at the seller’s QR code to continue.
           </Text>
@@ -126,13 +135,8 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  camera: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: "#000" },
+  camera: { flex: 1 },
   centered: {
     flex: 1,
     justifyContent: "center",
@@ -151,16 +155,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  headerSubtitle: {
-    color: "#e5e7eb",
-    fontSize: 14,
-    marginTop: 4,
-  },
+  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  headerSubtitle: { color: "#e5e7eb", fontSize: 14, marginTop: 4 },
   frame: {
     alignSelf: "center",
     width: 240,
@@ -182,10 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 999,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
+  buttonText: { color: "#fff", fontWeight: "700" },
   secondaryButton: {
     borderWidth: 1,
     borderColor: "#fff",
@@ -193,15 +186,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 999,
   },
-  secondaryButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
+  secondaryButtonText: { color: "#fff", fontWeight: "700" },
+  title: { fontSize: 22, fontWeight: "700", marginBottom: 8 },
   description: {
     fontSize: 14,
     color: "#4b5563",

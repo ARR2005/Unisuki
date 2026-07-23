@@ -55,7 +55,7 @@ export function useProductActions({
       const productRef = doc(db, "user", sellerId, "itemPosted", productId);
       await updateDoc(productRef, { isReserved: true });
 
-      // Step B: Create document in top-level 'reservations' collection
+      // Step B: Save reservation document and store reference ID
       const reservationPayload = {
         buyerId: currentUser.uid,
         sellerId,
@@ -69,7 +69,10 @@ export function useProductActions({
         createdAt: serverTimestamp(),
       };
 
-     await addDoc(collection(db, "reservations"), reservationPayload);
+      const reservationDocRef = await addDoc(
+        collection(db, "reservations"),
+        reservationPayload
+      );
 
       // Step C: Create deterministic reservation chat session
       const chatId = `${currentUser.uid}_${sellerId}_${productId}_res`;
@@ -95,7 +98,7 @@ export function useProductActions({
         { merge: true }
       );
 
-      // Step D: Send initial system message if room is new
+      // Step D: Send initial user message (not systemMessage)
       const messagesRef = collection(db, "chats", chatId, "messages");
       const existingMessages = await getDocs(messagesRef);
 
@@ -104,7 +107,7 @@ export function useProductActions({
           senderId: currentUser.uid,
           text: `Hi! I would like to reserve "${title}" for ₱${total.toFixed(2)}.`,
           createdAt: serverTimestamp(),
-          systemMessage: true,
+          systemMessage: false,
         });
       }
 
@@ -138,7 +141,6 @@ export function useProductActions({
     setIsInitiatingChat(true);
 
     try {
-      // Step A: Create deterministic direct chat session
       const chatId = `${currentUser.uid}_${sellerId}_${productId}_direct`;
       const chatRef = doc(db, "chats", chatId);
 
@@ -157,7 +159,6 @@ export function useProductActions({
         { merge: true }
       );
 
-      // Step B: Send initial inquiry message if room is new
       const messagesRef = collection(db, "chats", chatId, "messages");
       const existingMessages = await getDocs(messagesRef);
 
@@ -170,7 +171,6 @@ export function useProductActions({
         });
       }
 
-      // Step C: Navigate to direct chat
       router.push({
         pathname: "/(chat)/[chatId]",
         params: { chatId, isReservation: "false" },

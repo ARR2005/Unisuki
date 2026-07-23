@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, ActivityIndicator, FlatList } from "react-native";
 import Carousel from "@/feature/home/components/carousel";
 import CategoryMenu from "@/feature/home/components/categories";
 import ProductCard from "@/feature/home/components/productCard";
 import SearchBar from "@/feature/home/components/searchBar";
 import { useFetchBuyerProduct } from "@/feature/home/hooks/useFetchBuyerProduct";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
 export default function BuyerScreen() {
   const { products, loading, error } = useFetchBuyerProduct();
@@ -58,7 +58,7 @@ export default function BuyerScreen() {
             <Text className="ml-2 mb-2 mt-4 font-semibold text-gray-800">
               What product do you want?
             </Text>
-            
+
             <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -91,13 +91,18 @@ export default function BuyerScreen() {
               imageUrl={item.imageUrl}
               sellerName={item.sellerName || "Seller"}
               onPress={() => {
-                  const cleanProductId = String(item.id).trim();
-                  const cleanSellerId = String(item.userId).trim();
+                const cleanProductId = String(item.id).trim();
+                const cleanSellerId = String(item.userId).trim();
 
-                  console.log("Navigating to:", cleanProductId, "Seller:", cleanSellerId);
+                console.log(
+                  "Navigating to:",
+                  cleanProductId,
+                  "Seller:",
+                  cleanSellerId,
+                );
                 router.push({
                   pathname: "/(product)/productDetail/[id]",
-                  params: { 
+                  params: {
                     id: item.id,
                     sellerId: item.userId,
                   },
