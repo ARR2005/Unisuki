@@ -1,5 +1,5 @@
-import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
-import auth from "@/service/firebaseConfigs";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Text, View } from "react-native";
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
@@ -9,13 +9,13 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import auth from "@/service/firebaseConfigs";
+import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
 
 export default function SplashScreen() {
   const { getSavedLogin, clearLogin } = useAuthPersistence();
   const [statusMessage, setStatusMessage] = useState(
-    "Checking your saved session...",
+    "Checking your saved session..."
   );
 
   useEffect(() => {
@@ -37,13 +37,13 @@ export default function SplashScreen() {
         const credential = await signInWithEmailAndPassword(
           auth,
           savedLogin.email,
-          savedLogin.password,
+          savedLogin.password
         );
 
         const db = getFirestore();
         const verificationQuery = query(
           collection(db, "userVerifications"),
-          where("uid", "==", credential.user.uid),
+          where("uid", "==", credential.user.uid)
         );
         const verificationSnapshot = await getDocs(verificationQuery);
 
@@ -59,8 +59,9 @@ export default function SplashScreen() {
         } else {
           router.replace("/(validation)/welcomeScreen");
         }
-      } catch {
+      } catch (error) {
         if (!isMounted) return;
+        console.error("Session restoration failed:", error);
         await clearLogin();
         router.replace("/(auth)");
       }
@@ -74,9 +75,20 @@ export default function SplashScreen() {
   }, [clearLogin, getSavedLogin]);
 
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <ActivityIndicator size="large" color="#16a34a" />
-      <Text className="mt-4 text-base text-gray-600">{statusMessage}</Text>
+    <View className="bg-primary dark:bg-darkPrimary flex-1 items-center justify-center p-4">
+      <Image
+        source={require("@/assets/images/react-logo.png")}
+        className="w-80 h-80"
+        resizeMode="contain"
+      />
+      <ActivityIndicator
+        size="large"
+        color="orange"
+        className="mt-8 scale-[2]"
+      />
+      <Text className="mt-8 text-sm text-gray-500 dark:text-gray-400 text-center font-medium">
+        {statusMessage}
+      </Text>
     </View>
   );
 }

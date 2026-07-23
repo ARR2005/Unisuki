@@ -1,14 +1,12 @@
-
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { PortalHost } from "@rn-primitives/portal";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme, Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, useColorScheme, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { PortalHost } from "@rn-primitives/portal";
 import { ImageProvider } from "../context/storeImage";
 
 import "../global.css";
-import { StackScreen } from "react-native-screens";
 
 const transparentNavigationTheme = {
   ...DefaultTheme,
@@ -45,10 +43,30 @@ const MainLayout = () => {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
-          <Stack.Screen name="(post)/postForm" options={{ headerShown: false }} />
-          <Stack.Screen name="(validation)/welcomeScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="(validation)/validation" options={{ headerShown: false }} />
-          <Stack.Screen name="(product)/productDetail/[id]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(post)/postForm"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(validation)/welcomeScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(validation)/validation"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(product)/productDetail/[id]"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(scanner)/scan"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(scanner)/summary"
+            options={{ headerShown: false }}
+          />
         </Stack>
         <PortalHost />
       </View>
