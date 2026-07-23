@@ -8,6 +8,7 @@ import { PortalHost } from "@rn-primitives/portal";
 import { ImageProvider } from "../context/storeImage";
 
 import "../global.css";
+import { StackScreen } from "react-native-screens";
 
 const transparentNavigationTheme = {
   ...DefaultTheme,
@@ -47,6 +48,7 @@ const MainLayout = () => {
           <Stack.Screen name="(post)/postForm" options={{ headerShown: false }} />
           <Stack.Screen name="(validation)/welcomeScreen" options={{ headerShown: false }} />
           <Stack.Screen name="(validation)/validation" options={{ headerShown: false }} />
+          <Stack.Screen name="(product)/productDetail/[id]" options={{ headerShown: false }} />
         </Stack>
         <PortalHost />
       </View>

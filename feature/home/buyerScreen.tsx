@@ -5,11 +5,13 @@ import CategoryMenu from "@/feature/home/components/categories";
 import ProductCard from "@/feature/home/components/productCard";
 import SearchBar from "@/feature/home/components/searchBar";
 import { useFetchBuyerProduct } from "@/feature/home/hooks/useFetchBuyerProduct";
+import { router, useRouter } from "expo-router";
 
 export default function BuyerScreen() {
   const { products, loading, error } = useFetchBuyerProduct();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const router = useRouter();
 
   // Client-side filtering for real-time responsiveness
   const filteredProducts = useMemo(() => {
@@ -88,7 +90,19 @@ export default function BuyerScreen() {
               price={item.price}
               imageUrl={item.imageUrl}
               sellerName={item.sellerName || "Seller"}
-              onPress={() => console.log("Pressed product:", item.id)}
+              onPress={() => {
+                  const cleanProductId = String(item.id).trim();
+                  const cleanSellerId = String(item.userId).trim();
+
+                  console.log("Navigating to:", cleanProductId, "Seller:", cleanSellerId);
+                router.push({
+                  pathname: "/(product)/productDetail/[id]",
+                  params: { 
+                    id: item.id,
+                    sellerId: item.userId,
+                  },
+                });
+              }}
             />
           </View>
         )}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { collectionGroup, onSnapshot, query, Unsubscribe } from "firebase/firestore";
-import { db } from "@/service/firebaseConfigs";
+import { db, auth } from "@/service/firebaseConfigs";
 
 export type Product = {
   id: string;
@@ -13,37 +13,50 @@ export type Product = {
   category?: string;
   condition?: string;
   sellerName?: string;
+  userId: string; // The exact parent user document ID
   tags?: {
     title?: string;
     type?: string;
   };
 };
 
-export function useFetchBuyerProduct() {
+export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Queries all subcollections named 'itemPosted' across all users
     const productsGroupRef = collectionGroup(db, "itemPosted");
     const q = query(productsGroupRef);
+
+    const currentUserId = auth.currentUser?.uid;
 
     const unsubscribe: Unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         const fetchedProducts: Product[] = snapshot.docs.map((docSnap) => {
           const data = docSnap.data();
+
+          // Extract parent doc ID directly from Firestore reference path:
+          // user/{sellerUid}/itemPosted/{productId}
+          const sellerUidFromPath = docSnap.ref.parent.parent?.id || data.userId;
+
           return {
             id: docSnap.id,
             ...(data as Omit<Product, "id">),
-            // Fallbacks for title and image fields to map cleanly to components
+            userId: sellerUidFromPath, // Always guarantees the correct parent path ID
             title: data.tags?.title || data.title || "Untitled Product",
             imageUrl: data.imageUrl || data.imageUri || "https://picsum.photos/id/26/400/300",
           };
         });
 
-        setProducts(fetchedProducts);
+        // Filter out or filter for products posted by current user
+        const filteredProducts = fetchedProducts.filter((product) => {
+          const isMyPost = product.userId === currentUserId;
+          return excludeOwnProducts ? !isMyPost : isMyPost;
+        });
+
+        setProducts(filteredProducts);
         setLoading(false);
       },
       (err) => {
@@ -54,7 +67,7 @@ export function useFetchBuyerProduct() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [excludeOwnProducts]);
 
   return { products, loading, error };
 }

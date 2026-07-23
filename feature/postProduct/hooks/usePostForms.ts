@@ -4,8 +4,11 @@ import * as ImagePicker from "expo-image-picker";
 import {
   addDoc,
   collection,
+  getDocs,
   getFirestore,
+  query,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
@@ -34,7 +37,7 @@ export interface PostData {
 export const usePostForm = () => {
   const { capturedImage, setIsUploadingImage, setUploadError, clearImage } =
     useImage();
-  //   const DatabaseService = useDatabase();
+
   const [formData, setFormData] = useState<PostData>({
     title: "",
     price: "",
@@ -112,7 +115,6 @@ export const usePostForm = () => {
   };
 
   const validateForm = (): string | null => {
-    // Title validation: <25 characters
     if (!formData.title.trim()) {
       return "Please enter a title for your post";
     }
@@ -120,7 +122,6 @@ export const usePostForm = () => {
       return `Title must be less than 25 characters (current: ${formData.title.length})`;
     }
 
-    // Price validation
     if (!formData.price.trim()) {
       return "Please enter a price";
     }
@@ -132,15 +133,11 @@ export const usePostForm = () => {
       return "Price must be under ₱50,000";
     }
 
-    // Description validation
     if (!formData.description.trim()) {
       return "Please enter a description";
     }
 
-    // Category-specific validations (optional fields)
-    const category = (formData as any).category || "";
-    // Sizes and styles are now optional for Clothes
-    // No validation required for optional category fields
+    const category = formData.category || "";
 
     if (category === "Shoes") {
       if (!formData.shoeSize?.trim()) {
@@ -157,12 +154,11 @@ export const usePostForm = () => {
       }
     }
 
-    return null; // No errors
+    return null;
   };
 
   const uploadAndPublish = async (): Promise<boolean> => {
     try {
-      // Validate form first
       const validationError = validateForm();
       if (validationError) {
         setUploadError(validationError);
@@ -187,16 +183,44 @@ export const usePostForm = () => {
         throw new Error("Please sign in before publishing your item.");
       }
 
+      const db = getFirestore();
+
+      // 1. Query userVerifications by uid field for currently logged-in user
+      let sellerName = "Seller";
+      try {
+        const q = query(
+          collection(db, "userVerifications"),
+          where("uid", "==", userId)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          sellerName =
+            userData?.profileData?.username ||
+            userData?.profileData?.name ||
+            auth.currentUser?.displayName ||
+            "Seller";
+        } else if (auth.currentUser?.displayName) {
+          sellerName = auth.currentUser.displayName;
+        }
+      } catch (profileError) {
+        console.warn("Could not fetch seller profile name:", profileError);
+      }
+
+      // 2. Prepare payload with resolved sellerName attached
       const productData = {
         title: formData.title.trim(),
         price: parseFloat(formData.price),
         description: formData.description.trim(),
         imageUri: capturedImage.uri,
+        imageUrl: capturedImage.uri,
         tags: formData.tags,
         type: formData.type || "miscellaneous",
         quantity: formData.quantity || 1,
         category: formData.category || "Miscellaneous",
         additionalImages: formData.additionalImages || [],
+        sellerName, // Embedded username saved directly to product doc
         ...(formData.category === "Clothes"
           ? {
               sizes: formData.sizes?.trim() || "",
@@ -217,7 +241,7 @@ export const usePostForm = () => {
         status: "active",
       };
 
-      const db = getFirestore();
+      // 3. Save to user subcollection
       await addDoc(collection(db, "user", userId, "itemPosted"), productData);
 
       setIsUploadingImage(false);
