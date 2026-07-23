@@ -127,11 +127,9 @@ export default function Validation() {
               />
             ))}
           </View>
-
-          {/* Active Step Content */}
+          
           <View className="w-full flex-1">{renderStep()}</View>
 
-          {/* Navigation Controls Footer */}
           <View className="pt-2 pb-10 w-full border-t border-slate-200 dark:border-slate-800 flex-row items-center justify-between px-6">
             <TouchableOpacity
               onPress={prev}

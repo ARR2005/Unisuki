@@ -22,7 +22,8 @@ const MainLayout = () => {
   const backgroundImage = isDark
     ? require("../assets/darkBackground.png")
     : require("../assets/whiteBackground.png");
-return (
+
+  return (
     <ThemeProvider value={transparentNavigationTheme}>
       <View style={styles.container}>
         <StatusBar
@@ -51,7 +52,7 @@ return (
       </View>
     </ThemeProvider>
   );
-}
+};
 
 export default function RootLayout() {
   return (
