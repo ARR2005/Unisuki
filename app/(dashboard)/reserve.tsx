@@ -146,7 +146,7 @@ export default function ReservationsScreen() {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-transparent">
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Screen Header */}
@@ -173,161 +173,173 @@ export default function ReservationsScreen() {
         </View>
       </View>
 
-      {/* Content Section */}
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      ) : (
-        <FlatList
-          data={currentData}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
-          ListEmptyComponent={
-            <View className="py-20 items-center justify-center">
-              <Ionicons
-                name={
-                  activeMode === "buyer"
-                    ? "bookmark-outline"
-                    : "pricetags-outline"
-                }
-                size={56}
-                color={isDark ? "#475569" : "#9ca3af"}
-              />
-              <Text
-                className={`mt-4 text-lg font-bold ${
-                  isDark ? "text-gray-200" : "text-gray-800"
-                }`}
-              >
-                {activeMode === "buyer"
-                  ? "No Reservations Found"
-                  : "No Products Reserved Yet"}
-              </Text>
-              <Text
-                className={`mt-1 text-sm text-center px-8 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                {activeMode === "buyer"
-                  ? "Products you reserve from sellers will appear here."
-                  : "Items buyers reserve from your listings will appear here."}
-              </Text>
-            </View>
-          }
-          renderItem={({ item }) => {
-            const badge = getStatusBadge(item.status);
-            const isClosed =
-              item.status === "completed" ||
-              item.status === "cancelled" ||
-              item.status === "declined" ||
-              item.status === "rejected";
+      {/* Main Content Card Wrapper with rounded top corners and background */}
+      <View
+        className={`flex-1 rounded-t-3xl overflow-hidden border-t ${
+          isDark
+            ? "bg-[#0e0e0e] border-[#01170f]"
+            : "bg-[#f3f3f3] border-gray-200"
+        }`}
+      >
+        {isLoading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#059669" />
+          </View>
+        ) : (
+          <FlatList
+            data={currentData}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
+            ListEmptyComponent={
+              <View className="py-20 items-center justify-center">
+                <Ionicons
+                  name={
+                    activeMode === "buyer"
+                      ? "bookmark-outline"
+                      : "pricetags-outline"
+                  }
+                  size={56}
+                  color={isDark ? "#10b981" : "#059669"}
+                />
+                <Text
+                  className={`mt-4 text-lg font-bold ${
+                    isDark ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {activeMode === "buyer"
+                    ? "No Reservations Found"
+                    : "No Products Reserved Yet"}
+                </Text>
+                <Text
+                  className={`mt-1 text-sm text-center px-8 ${
+                    isDark ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
+                  {activeMode === "buyer"
+                    ? "Products you reserve from sellers will appear here."
+                    : "Items buyers reserve from your listings will appear here."}
+                </Text>
+              </View>
+            }
+            renderItem={({ item }) => {
+              const badge = getStatusBadge(item.status);
+              const isClosed =
+                item.status === "completed" ||
+                item.status === "cancelled" ||
+                item.status === "declined" ||
+                item.status === "rejected";
 
-            return (
-              <TouchableOpacity
-                activeOpacity={isClosed ? 1 : 0.8}
-                disabled={isClosed}
-                onPress={() => handleOpenChat(item)}
-                className={`mb-4 p-4 rounded-2xl border ${
-                  isClosed
-                    ? isDark
-                      ? "bg-[#0e0e0e]/20 border-slate-800/40 opacity-60"
-                      : "bg-gray-100/60 border-gray-200 opacity-60"
-                    : isDark
-                    ? "bg-[#0e0e0e]/40 border-slate-800"
-                    : "bg-white border-emerald-200"
-                }`}
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isDark ? 0.2 : 0.05,
-                  shadowRadius: 6,
-                  elevation: isClosed ? 0 : 2,
-                }}
-              >
-                <View className="flex-row gap-3">
-                  {/* Thumbnail */}
-                  {item.imageUri || item.itemImage ? (
-                    <Image
-                      source={{ uri: item.imageUri || item.itemImage }}
-                      className="w-20 h-20 rounded-xl bg-gray-200"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      className={`w-20 h-20 rounded-xl items-center justify-center ${
-                        isDark ? "bg-[#0e0e0e]/20" : "bg-gray-200"
-                      }`}
-                    >
-                      <Ionicons
-                        name="image-outline"
-                        size={24}
-                        color="#9ca3af"
+              return (
+                <TouchableOpacity
+                  activeOpacity={isClosed ? 1 : 0.8}
+                  disabled={isClosed}
+                  onPress={() => handleOpenChat(item)}
+                  className={`mb-4 p-4 rounded-2xl border ${
+                    isClosed
+                      ? isDark
+                        ? "bg-[#0e0e0e]/20 border-[#01170f]/40 opacity-60"
+                        : "bg-gray-100/60 border-gray-200 opacity-60"
+                      : isDark
+                      ? "bg-[#0e0e0e] border-[#01170f]"
+                      : "bg-white border-emerald-200"
+                  }`}
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0.2 : 0.05,
+                    shadowRadius: 6,
+                    elevation: isClosed ? 0 : 2,
+                  }}
+                >
+                  <View className="flex-row gap-3">
+                    {/* Thumbnail */}
+                    {item.imageUri || item.itemImage ? (
+                      <Image
+                        source={{ uri: item.imageUri || item.itemImage }}
+                        className="w-20 h-20 rounded-xl bg-gray-200"
+                        resizeMode="cover"
                       />
-                    </View>
-                  )}
+                    ) : (
+                      <View
+                        className={`w-20 h-20 rounded-xl items-center justify-center ${
+                          isDark ? "bg-[#01170f]" : "bg-gray-200"
+                        }`}
+                      >
+                        <Ionicons
+                          name="image-outline"
+                          size={24}
+                          color={isDark ? "#10b981" : "#059669"}
+                        />
+                      </View>
+                    )}
 
-                  {/* Info Column */}
-                  <View className="flex-1 justify-between">
-                    <View>
-                      <View className="flex-row items-center justify-between gap-2">
-                        <Text
-                          numberOfLines={1}
-                          className={`text-base font-bold flex-1 ${
-                            isDark ? "text-white" : "text-gray-900"
-                          }`}
-                        >
-                          {item.title || item.itemTitle || "Reserved Item"}
-                        </Text>
-
-                        {/* Status Badge */}
-                        <View className={`px-2.5 py-0.5 rounded-full ${badge.bg}`}>
-                          <Text className={`text-xs font-semibold ${badge.text}`}>
-                            {badge.label}
+                    {/* Info Column */}
+                    <View className="flex-1 justify-between">
+                      <View>
+                        <View className="flex-row items-center justify-between gap-2">
+                          <Text
+                            numberOfLines={1}
+                            className={`text-base font-bold flex-1 ${
+                              isDark ? "text-white" : "text-gray-900"
+                            }`}
+                          >
+                            {item.title || item.itemTitle || "Reserved Item"}
                           </Text>
+
+                          {/* Status Badge */}
+                          <View className={`px-2.5 py-0.5 rounded-full ${badge.bg}`}>
+                            <Text className={`text-xs font-semibold ${badge.text}`}>
+                              {badge.label}
+                            </Text>
+                          </View>
                         </View>
+
+                        {/* Price */}
+                        <Text className="mt-1 text-emerald-600 dark:text-emerald-400 font-bold text-base">
+                          ₱{Number(item.totalPrice || item.price || 0).toFixed(2)}
+                        </Text>
                       </View>
 
-                      {/* Price */}
-                      <Text className="mt-1 text-emerald-600 dark:text-emerald-400 font-bold text-base">
-                        ₱{Number(item.totalPrice || item.price || 0).toFixed(2)}
-                      </Text>
-                    </View>
-
-                    {/* Chat Action Prompt or Archived Disabled Badge */}
-                    <View className="flex-row items-center justify-between mt-2">
-                      {isClosed ? (
-                        <View className="flex-row items-center gap-1">
-                          <Ionicons
-                            name="lock-closed-outline"
-                            size={14}
-                            color={isDark ? "#64748b" : "#9ca3af"}
-                          />
-                          <Text className="text-xs text-gray-500 font-medium">
-                            Transaction closed
-                          </Text>
-                        </View>
-                      ) : (
-                        <>
-                          <Text className="text-xs text-gray-400">
-                            {activeMode === "buyer"
-                              ? "Chat with seller"
-                              : "Chat with buyer"}
-                          </Text>
-                          <Ionicons
-                            name="chatbubble-ellipses-outline"
-                            size={18}
-                            color="#059669"
-                          />
-                        </>
-                      )}
+                      {/* Chat Action Prompt or Archived Disabled Badge */}
+                      <View className="flex-row items-center justify-between mt-2">
+                        {isClosed ? (
+                          <View className="flex-row items-center gap-1">
+                            <Ionicons
+                              name="lock-closed-outline"
+                              size={14}
+                              color={isDark ? "#10b981" : "#059669"}
+                            />
+                            <Text
+                              className={`text-xs font-medium ${
+                                isDark ? "text-emerald-500/80" : "text-emerald-800"
+                              }`}
+                            >
+                              Transaction closed
+                            </Text>
+                          </View>
+                        ) : (
+                          <>
+                            <Text className="text-xs text-gray-400">
+                              {activeMode === "buyer"
+                                ? "Chat with seller"
+                                : "Chat with buyer"}
+                            </Text>
+                            <Ionicons
+                              name="chatbubble-ellipses-outline"
+                              size={18}
+                              color={isDark ? "#10b981" : "#059669"}
+                            />
+                          </>
+                        )}
+                      </View>
                     </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
+      </View>
     </View>
   );
 }
@@ -348,8 +360,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   modeSwitcherDark: {
-    borderColor: "#1f2937",
-    backgroundColor: "rgba(14, 14, 14, 0.2)",
+    borderColor: "#01170f",
+    backgroundColor: "#0e0e0e",
   },
   modeButton: {
     flex: 1,

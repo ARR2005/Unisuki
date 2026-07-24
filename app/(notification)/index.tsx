@@ -211,7 +211,7 @@ export default function NotificationsPage() {
   return (
     <SafeAreaView
       edges={["top"]}
-      className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}
+      className={`flex-1`}
     >
       {/* Header */}
       <View

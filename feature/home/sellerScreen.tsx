@@ -85,22 +85,31 @@ export default function SellerScreen() {
   if (loading) {
     return (
       <View
-        className={`flex-1 w-full items-center justify-center p-6 ${
-          isDark ? "bg-[#0e0e0e]" : "bg-white"
+        className={`flex-1 w-full items-center justify-center p-6 rounded-t-3xl border-t ${
+          isDark
+            ? "bg-[#0e0e0e] border-[#01170f]"
+            : "bg-[#f3f3f3] border-gray-200"
         }`}
       >
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#059669" />
+        <Text
+          className={`mt-3 text-lg font-bold ${
+            isDark ? "text-gray-200" : "text-gray-700"
+          }`}
+        >
+          Loading inventory...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 w-full">
-      {/* Search Bar Outside the Card Container */}
+    <View className="flex-1 w-full bg-transparent">
+      {/* Search Bar Title & Component */}
       <View className="mb-4 px-4">
         <Text
-          className={`ml-2 mb-2 mt-4 font-semibold ${
-            isDark ? "text-gray-100" : "text-gray-800"
+          className={`ml-1 mb-3 mt-4 text-xl font-bold tracking-tight ${
+            isDark ? "text-white" : "text-gray-900"
           }`}
         >
           Search your inventory
@@ -116,8 +125,10 @@ export default function SellerScreen() {
 
       {/* Main Content Container Card */}
       <View
-        className={`flex-1 w-full pt-2 rounded-t-2xl ${
-          isDark ? "bg-[#0e0e0e]" : "bg-white"
+        className={`flex-1 w-full rounded-t-3xl overflow-hidden border-t ${
+          isDark
+            ? "bg-[#0e0e0e] border-[#01170f]"
+            : "bg-[#f3f3f3] border-gray-200"
         }`}
       >
         <FlatList
@@ -128,36 +139,36 @@ export default function SellerScreen() {
           ListHeaderComponent={
             products.length > 0 ? (
               <View
-                className={`flex-row items-center justify-between w-full py-3 border-b px-2 border-slate-200 ${
+                className={`flex-row items-center justify-between w-full py-3.5 px-3 border-b ${
                   isDark
-                    ? "bg-[#0e0e0e]/40"
-                    : "bg-gray-50"
+                    ? "bg-[#0e0e0e] border-[#01170f]"
+                    : "bg-gray-100/80 border-gray-200"
                 }`}
               >
                 <Text
                   className={`w-12 font-bold text-xs text-center ${
-                    isDark ? "text-white" : "text-gray-500"
+                    isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
                   ITEM
                 </Text>
                 <Text
                   className={`flex-1 font-bold text-xs ml-3 ${
-                    isDark ? "text-white" : "text-gray-500"
+                    isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
                   TITLE
                 </Text>
                 <Text
                   className={`w-20 font-bold text-xs text-center ${
-                    isDark ? "text-white" : "text-gray-500"
+                    isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
                   PRICE
                 </Text>
                 <Text
                   className={`w-20 font-bold text-xs text-center ${
-                    isDark ? "text-white" : "text-gray-500"
+                    isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
                   ACTIONS
@@ -167,47 +178,47 @@ export default function SellerScreen() {
           }
           ListEmptyComponent={
             products.length === 0 ? (
-              <View className="py-16 w-full items-center justify-center">
+              <View className="py-20 w-full items-center justify-center px-6">
                 <Ionicons
                   name="pricetag-outline"
-                  size={36}
-                  color={isDark ? "#9ca3af" : "#9ca3af"}
+                  size={56}
+                  color={isDark ? "#10b981" : "#059669"}
                 />
                 <Text
-                  className={`mt-3 text-lg font-semibold ${
-                    isDark ? "text-white" : "text-gray-700"
+                  className={`mt-4 text-2xl font-extrabold text-center ${
+                    isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  No listings yet
+                  No Listings Yet
                 </Text>
                 <Text
-                  className={`mt-1 text-sm ${
-                    isDark ? "text-gray-400" : "text-gray-500"
+                  className={`text-base mt-2 text-center font-medium ${
+                    isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  Products you post will appear here.
+                  Products you post will appear here for management.
                 </Text>
               </View>
             ) : (
-              <View className="py-16 w-full items-center justify-center">
+              <View className="py-20 w-full items-center justify-center px-6">
                 <Ionicons
                   name="search-outline"
-                  size={36}
-                  color={isDark ? "#9ca3af" : "#9ca3af"}
+                  size={56}
+                  color={isDark ? "#10b981" : "#059669"}
                 />
                 <Text
-                  className={`mt-3 text-lg font-semibold ${
-                    isDark ? "text-white" : "text-gray-700"
+                  className={`mt-4 text-2xl font-extrabold text-center ${
+                    isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  No matching items
+                  No Matching Items
                 </Text>
                 <Text
-                  className={`mt-1 text-sm ${
-                    isDark ? "text-gray-400" : "text-gray-500"
+                  className={`text-base mt-2 text-center font-medium ${
+                    isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  Try adjusting your search query.
+                  Try adjusting your inventory search query.
                 </Text>
               </View>
             )
@@ -223,7 +234,9 @@ export default function SellerScreen() {
 
             return (
               <View
-                className={`flex-row items-center justify-between w-full py-3 border-b px-2 border-slate-200`}
+                className={`flex-row items-center justify-between w-full py-3.5 px-3 border-b ${
+                  isDark ? "border-[#01170f]" : "border-gray-200"
+                }`}
               >
                 <View className="w-12 items-center justify-center">
                   {imageUri ? (
@@ -234,13 +247,13 @@ export default function SellerScreen() {
                   ) : (
                     <View
                       className={`w-12 h-12 rounded-lg items-center justify-center ${
-                        isDark ? "bg-[#0e0e0e]/20" : "bg-gray-200"
+                        isDark ? "bg-[#01170f]" : "bg-gray-200"
                       }`}
                     >
                       <Ionicons
                         name="image-outline"
                         size={22}
-                        color={isDark ? "#9ca3af" : "#6b7280"}
+                        color={isDark ? "#10b981" : "#059669"}
                       />
                     </View>
                   )}
@@ -248,7 +261,7 @@ export default function SellerScreen() {
 
                 <Text
                   numberOfLines={2}
-                  className={`flex-1 mx-3 text-sm font-medium ${
+                  className={`flex-1 mx-3 text-sm font-semibold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >

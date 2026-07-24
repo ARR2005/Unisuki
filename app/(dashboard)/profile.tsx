@@ -85,6 +85,8 @@ export default function ProfileTab() {
     avatar: currentUser?.photoURL || undefined,
   };
 
+  const iconColor = isDark ? "#10b981" : "#059669";
+
   return (
     <ScreenWrapper headerComponent={<ProfileHeader user={userProfileHeader} />}>
       <View
@@ -192,11 +194,11 @@ export default function ProfileTab() {
           >
             <Ionicons
               name="shield-checkmark-outline"
-              size={20}
-              color="#059669"
+              size={22}
+              color={iconColor}
             />
             <Text
-              className={`flex-1 ml-3 font-semibold ${
+              className={`flex-1 ml-4 text-base font-semibold ${
                 isDark ? "text-white" : "text-gray-900"
               }`}
             >
@@ -219,11 +221,11 @@ export default function ProfileTab() {
         >
           <Ionicons
             name="bag-handle-outline"
-            size={20}
-            color={isDark ? "#9ca3af" : "#4b5563"}
+            size={22}
+            color={iconColor}
           />
           <Text
-            className={`flex-1 ml-3 font-semibold ${
+            className={`flex-1 ml-4 text-base font-semibold ${
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
@@ -245,11 +247,11 @@ export default function ProfileTab() {
         >
           <Ionicons
             name="ticket-outline"
-            size={20}
-            color={isDark ? "#9ca3af" : "#4b5563"}
+            size={22}
+            color={iconColor}
           />
           <Text
-            className={`flex-1 ml-3 font-semibold ${
+            className={`flex-1 ml-4 text-base font-semibold ${
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
@@ -339,8 +341,8 @@ export default function ProfileTab() {
           }`}
           onPress={() => setShowLogoutModal(true)}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text className="flex-1 ml-3 font-semibold text-red-500">
+          <Ionicons name="log-out-outline" size={22} color="#EF4444" />
+          <Text className="flex-1 ml-4 text-base font-semibold text-red-500">
             Logout
           </Text>
         </TouchableOpacity>
@@ -350,7 +352,9 @@ export default function ProfileTab() {
       <LogoutModal
         visible={showLogoutModal}
         onCancel={() => setShowLogoutModal(false)}
+       
       />
+      <View className="h-16" />
     </ScreenWrapper>
   );
 }

@@ -1,7 +1,7 @@
 import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -41,23 +41,57 @@ export default function PurchaseHistoryScreen() {
       return;
     }
 
+    // 1. Query Purchase History subcollection
     const historyRef = collection(
       db,
       "user",
       currentUser.uid,
       "purchaseHistory"
     );
-    const q = query(historyRef, orderBy("archivedAt", "desc"));
+    const qHistory = query(historyRef, orderBy("archivedAt", "desc"));
 
-    const unsubscribe = onSnapshot(
-      q,
+    // 2. Query Posted Items with status == "sold"
+    const postedRef = collection(
+      db,
+      "user",
+      currentUser.uid,
+      "itemPosted"
+    );
+    const qPosted = query(postedRef, where("status", "==", "sold"));
+
+    let historyDocs: any[] = [];
+    let postedDocs: any[] = [];
+
+    const mergeAndSort = () => {
+      const combined = [...historyDocs, ...postedDocs];
+
+      combined.sort((a, b) => {
+        const timeA = a.archivedAt?.toDate
+          ? a.archivedAt.toDate().getTime()
+          : a.publishedAt?.toDate
+          ? a.publishedAt.toDate().getTime()
+          : 0;
+        const timeB = b.archivedAt?.toDate
+          ? b.archivedAt.toDate().getTime()
+          : b.publishedAt?.toDate
+          ? b.publishedAt.toDate().getTime()
+          : 0;
+        return timeB - timeA;
+      });
+
+      setItems(combined);
+      setLoading(false);
+    };
+
+    const unsubHistory = onSnapshot(
+      qHistory,
       (snapshot) => {
-        const historyItems = snapshot.docs.map((docSnap) => ({
+        historyDocs = snapshot.docs.map((docSnap) => ({
           id: docSnap.id,
+          source: "purchaseHistory",
           ...(docSnap.data() as Record<string, any>),
         }));
-        setItems(historyItems);
-        setLoading(false);
+        mergeAndSort();
       },
       (error) => {
         console.error("Failed to load purchase history:", error);
@@ -65,7 +99,36 @@ export default function PurchaseHistoryScreen() {
       }
     );
 
-    return () => unsubscribe();
+    const unsubPosted = onSnapshot(
+      qPosted,
+      (snapshot) => {
+        postedDocs = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            source: "itemPosted",
+            itemTitle:
+              data.tags?.title || data.title || data.description || "Sold Item",
+            itemPrice: data.price,
+            totalPrice: data.price,
+            imageUrl: data.imageUrl || data.imageUri,
+            sellerName: data.sellerName || "Me",
+            completedAt: data.publishedAt,
+            ...data,
+          };
+        });
+        mergeAndSort();
+      },
+      (error) => {
+        console.error("Failed to load sold items:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubHistory();
+      unsubPosted();
+    };
   }, []);
 
   const handleOpenChat = (item: any) => {
@@ -86,7 +149,7 @@ export default function PurchaseHistoryScreen() {
     <View className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}>
       <Stack.Screen
         options={{
-          title: "Purchase History",
+          title: "Purchase & Sales History",
           headerStyle: { backgroundColor: isDark ? "#0e0e0e" : "#ffffff" },
           headerTintColor: isDark ? "#ffffff" : "#111827",
         }}
@@ -96,37 +159,42 @@ export default function PurchaseHistoryScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#059669" />
           <Text
-            className={`mt-3 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+            className={`mt-3 text-base font-semibold ${
+              isDark ? "text-gray-300" : "text-gray-600"
+            }`}
           >
-            Loading purchase history...
+            Loading transaction history...
           </Text>
         </View>
       ) : items.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="bag-handle-outline" size={48} color="#059669" />
+          <Ionicons
+            name="bag-handle-outline"
+            size={56}
+            color={isDark ? "#10b981" : "#059669"}
+          />
           <Text
-            className={`mt-4 text-lg font-semibold ${
+            className={`mt-4 text-xl font-bold ${
               isDark ? "text-white" : "text-gray-900"
             }`}
           >
-            No completed purchases yet
+            No completed purchases or sales
           </Text>
           <Text
-            className={`mt-2 text-center ${
+            className={`mt-2 text-center text-sm ${
               isDark ? "text-gray-400" : "text-gray-600"
             }`}
           >
-            Once an item is handed over, it will appear here as an archived
-            purchase.
+            Once an item is handed over or marked as sold, it will appear here.
           </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
           {items.map((item) => {
             const imageUri =
-              item.imageUrl || item.itemImage || item.productImage;
+              item.imageUrl || item.imageUri || item.itemImage || item.productImage;
             const archivedDate = formatDate(
-              item.archivedAt || item.completedAt
+              item.archivedAt || item.completedAt || item.publishedAt
             );
 
             return (
@@ -136,8 +204,8 @@ export default function PurchaseHistoryScreen() {
                 onPress={() => setSelectedItem(item)}
                 className={`mb-3 rounded-2xl border p-3.5 ${
                   isDark
-                    ? "border-slate-800 bg-[#0e0e0e]/40"
-                    : "border-gray-200/80 bg-white"
+                    ? "border-[#01170f] bg-[#0e0e0e]"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 <View className="flex-row items-center gap-3">
@@ -151,13 +219,13 @@ export default function PurchaseHistoryScreen() {
                   ) : (
                     <View
                       className={`w-16 h-16 rounded-xl items-center justify-center ${
-                        isDark ? "bg-white/10" : "bg-gray-100"
+                        isDark ? "bg-[#01170f]" : "bg-gray-100"
                       }`}
                     >
                       <Ionicons
                         name="image-outline"
                         size={24}
-                        color={isDark ? "#9ca3af" : "#6b7280"}
+                        color={isDark ? "#10b981" : "#059669"}
                       />
                     </View>
                   )}
@@ -170,7 +238,7 @@ export default function PurchaseHistoryScreen() {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      {item.itemTitle || "Archived Item"}
+                      {item.itemTitle || item.tags?.title || "Archived Item"}
                     </Text>
                     <Text
                       className={`mt-0.5 text-xs ${
@@ -185,22 +253,22 @@ export default function PurchaseHistoryScreen() {
                           isDark ? "text-gray-500" : "text-gray-400"
                         }`}
                       >
-                        Purchased {archivedDate}
+                        {item.status === "sold" ? "Sold" : "Purchased"} {archivedDate}
                       </Text>
                     ) : null}
                   </View>
 
-                  {/* Price & Completed Status Badge */}
+                  {/* Price & Status Badge */}
                   <View className="items-end justify-between self-stretch py-0.5">
                     <Text className="text-emerald-500 dark:text-emerald-400 font-bold text-base">
                       ₱
-                      {Number(item.totalPrice || item.itemPrice || 0).toFixed(
-                        2
-                      )}
+                      {Number(
+                        item.totalPrice || item.itemPrice || item.price || 0
+                      ).toFixed(2)}
                     </Text>
-                    <View className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/50">
+                    <View className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-[#01170f] border border-emerald-300 dark:border-emerald-700/50">
                       <Text className="text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
-                        ✓ Completed
+                        {item.status === "sold" ? "✓ Sold" : "✓ Completed"}
                       </Text>
                     </View>
                   </View>
@@ -221,24 +289,24 @@ export default function PurchaseHistoryScreen() {
         >
           <View
             className={`flex-1 justify-end ${
-              isDark ? "bg-black/70" : "bg-black/40"
+              isDark ? "bg-black/80" : "bg-black/40"
             }`}
           >
             <View
               className={`rounded-t-3xl p-6 border-t ${
                 isDark
-                  ? "bg-[#0e0e0e] border-slate-800"
+                  ? "bg-[#0e0e0e] border-[#01170f]"
                   : "bg-white border-gray-200"
               }`}
             >
               {/* Modal Header */}
-              <View className="flex-row items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
+              <View className="flex-row items-center justify-between pb-4 border-b border-gray-100 dark:border-[#01170f]">
                 <Text
                   className={`text-lg font-bold ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Purchase Receipt
+                  Transaction Receipt
                 </Text>
                 <TouchableOpacity onPress={() => setSelectedItem(null)}>
                   <Ionicons
@@ -252,12 +320,14 @@ export default function PurchaseHistoryScreen() {
               {/* Item Card Body */}
               <View className="my-5 flex-row items-center gap-4">
                 {selectedItem.imageUrl ||
+                selectedItem.imageUri ||
                 selectedItem.itemImage ||
                 selectedItem.productImage ? (
                   <Image
                     source={{
                       uri:
                         selectedItem.imageUrl ||
+                        selectedItem.imageUri ||
                         selectedItem.itemImage ||
                         selectedItem.productImage,
                     }}
@@ -267,10 +337,14 @@ export default function PurchaseHistoryScreen() {
                 ) : (
                   <View
                     className={`w-20 h-20 rounded-2xl items-center justify-center ${
-                      isDark ? "bg-white/10" : "bg-gray-100"
+                      isDark ? "bg-[#01170f]" : "bg-gray-100"
                     }`}
                   >
-                    <Ionicons name="image-outline" size={32} color="#9ca3af" />
+                    <Ionicons
+                      name="image-outline"
+                      size={32}
+                      color={isDark ? "#10b981" : "#059669"}
+                    />
                   </View>
                 )}
 
@@ -280,7 +354,7 @@ export default function PurchaseHistoryScreen() {
                       isDark ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    {selectedItem.itemTitle || "Archived Item"}
+                    {selectedItem.itemTitle || selectedItem.tags?.title || "Archived Item"}
                   </Text>
                   <Text
                     className={`text-xs mt-1 ${
@@ -292,7 +366,10 @@ export default function PurchaseHistoryScreen() {
                   <Text className="text-emerald-500 font-extrabold text-lg mt-1">
                     ₱
                     {Number(
-                      selectedItem.totalPrice || selectedItem.itemPrice || 0
+                      selectedItem.totalPrice ||
+                        selectedItem.itemPrice ||
+                        selectedItem.price ||
+                        0
                     ).toFixed(2)}
                   </Text>
                 </View>
@@ -303,7 +380,7 @@ export default function PurchaseHistoryScreen() {
                 {selectedItem.chatId ? (
                   <TouchableOpacity
                     onPress={() => handleOpenChat(selectedItem)}
-                    className="w-full py-3.5 rounded-xl bg-emerald-600 flex-row items-center justify-center gap-2"
+                    className="w-full py-3.5 rounded-xl bg-emerald-600 dark:bg-[#065f46] flex-row items-center justify-center gap-2"
                   >
                     <Ionicons
                       name="chatbubble-ellipses-outline"
@@ -320,7 +397,7 @@ export default function PurchaseHistoryScreen() {
                   onPress={() => setSelectedItem(null)}
                   className={`w-full py-3.5 rounded-xl border items-center justify-center ${
                     isDark
-                      ? "border-slate-800 bg-[#0e0e0e]/40"
+                      ? "border-[#01170f] bg-[#0e0e0e]"
                       : "border-gray-300 bg-gray-50"
                   }`}
                 >

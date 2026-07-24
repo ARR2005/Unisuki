@@ -29,7 +29,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function PostFormScreen() {
-  const isDark = useColorScheme() == "dark";
+  const isDark = useColorScheme() === "dark";
   const router = useRouter();
   const { capturedImage, uploadError, setUploadError, isUploadingImage } =
     useImage();
@@ -81,25 +81,33 @@ export default function PostFormScreen() {
 
   if (!capturedImage) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-600">No image captured</Text>
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"
+        }`}
+      >
+        <Text className={isDark ? "text-gray-400" : "text-gray-600"}>
+          No image captured
+        </Text>
       </View>
     );
   }
 
   if (isClassifying && !showSuggestionModal) {
     return (
-      <SafeAreaView edges={["top"]} className="flex-1">
+      <SafeAreaView
+        edges={["top"]}
+        className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}
+      >
         <View className="flex-1 items-center justify-start pt-32">
           <View className="w-full h-70 items-center px-4">
-            
             {/* Icon Container */}
-            <View className="w-20 h-20 rounded-full bg-[#16a34a] items-center justify-center mb-5">
-              <Ionicons name="sparkles-outline" size={34} color={isDark ? "#ffffff" : "#000000"} />
+            <View className="w-20 h-20 rounded-full bg-[#059669] dark:bg-[#065f46] items-center justify-center mb-5">
+              <Ionicons name="sparkles-outline" size={34} color="#ffffff" />
             </View>
 
             {/* Heading */}
-            <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center">
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center">
               Analyzing Your Image
             </Text>
 
@@ -110,16 +118,15 @@ export default function PostFormScreen() {
             </Text>
 
             {/* Activity Indicator */}
-            <ActivityIndicator 
-              size="large" 
-              color={isDark ? "#38bdf8" : "#111827"} 
-              className="mt-6" 
+            <ActivityIndicator
+              size="large"
+              color={isDark ? "#10b981" : "#059669"}
+              className="mt-6"
             />
 
             <Text className="text-sm text-gray-500 dark:text-gray-400 mt-4">
               This usually takes a few seconds.
             </Text>
-
           </View>
         </View>
       </SafeAreaView>
@@ -174,292 +181,312 @@ export default function PostFormScreen() {
         </View>
       </DialogContent>
       </Dialog>
-      
+
       {/* Suggestion Dialog */}
       <Dialog
-      open={showSuggestionModal}
-      onOpenChange={(open) => {
-      if (!open) {
-        handleRejectSuggestion();
-      }
-        }}>
-      <DialogContent className="w-full max-w-sm bg-[#f3f3f3] dark:bg-[#131313] border-none">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-green-700 dark:text-green-500 mb-2">
-            UNISUKI Suggestion
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-slate-200">
-            Based on your image, we suggest the following details:
-          </DialogDescription>
-        </DialogHeader>
-
-      {suggestedData && (
-      <View className="bg-white dark:bg-slate-800/30 rounded-lg p-4 mb-6 gap-3 border border-gray-200/30 dark:border-slate-700/30">
-        <View>
-          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-            Title
-          </Text>
-          <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {suggestedData.title}
-          </Text>
-        </View>
-
-        <View>
-          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-            Category
-          </Text>
-          <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {suggestedData.category}
-          </Text>
-        </View>
-
-        <View>
-          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-            Price
-          </Text>
-          <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            ₱{suggestedData.price}
-          </Text>
-        </View>
-
-        <View>
-          <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-            Description
-          </Text>
-          <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {suggestedData.description}
-          </Text>
-        </View>
-      </View>
-      )}
-
-      <View className="flex-row gap-3">
-          <TouchableOpacity
-            onPress={handleRejectSuggestion}
-            className="flex-1 border border-gray-300 dark:border-slate-700/30 bg-transparent dark:bg-slate-800/30 rounded-lg py-3 items-center"
-          >
-            <Text className="font-semibold text-gray-700 dark:text-gray-300">
-              Skip
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleAcceptSuggestion}
-            className="flex-1 bg-green-600 dark:bg-green-600 rounded-lg py-3 items-center"
-          >
-            <Text className="font-semibold text-white">Accept</Text>
-          </TouchableOpacity>
-        </View>
-      </DialogContent>
-    </Dialog>
-
-<SafeAreaView edges={["top"]} className="flex-1 bg-[#f3f3f3] dark:bg-[#131313]">
-  <KeyboardAvoidingView
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    className="flex-1"
-  >
-    <ScrollView
-      className="flex-1"
-      contentContainerStyle={{ paddingBottom: 32 }}
-      keyboardShouldPersistTaps="handled"
-    >
-      {/* Navigation Controls Overlay */}
-      <View className="z-10 absolute top-4 left-0 right-0 flex-row justify-between px-4">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-black/60 dark:bg-black/80 rounded-full p-2"
-        >
-          <Ionicons name="chevron-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-black/60 dark:bg-black/80 rounded-full p-2"
-        >
-          <Ionicons name="close" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Image Preview */}
-      <View className="h-80 bg-gray-200 dark:bg-gray-800 m-2 rounded-2xl relative overflow-hidden">
-        <Image
-          source={{ uri: capturedImage.uri }}
-          className="w-full h-full"
-          resizeMode="cover"
-        />
-      </View>
-
-      <View className="px-5 pt-6">
-        {/* Title Input */}
-        <View className="mb-5">
-          <View className="flex-row justify-between items-center">
-            <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
-              Item Title
-            </Text>
-            <Text
-              className={`text-xs ${
-                formData.title.length >= 25
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              {formData.title.length}/24
-            </Text>
-          </View>
-          <View
-            className={`flex-row items-center border rounded-lg bg-white dark:bg-gray-800/60 ${
-              formData.title.length >= 25
-                ? "border-red-500 bg-red-50 dark:bg-red-950/30"
-                : "border-gray-300 dark:border-gray-700"
-            }`}
-          >
-            <TextInput
-              value={formData.title}
-              onChangeText={(text) => updateFormField("title", text)}
-              placeholder="Enter product title (max 24 chars)"
-              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-              className="flex-1 p-3 text-base text-gray-900 dark:text-gray-100"
-              editable={!isUploadingImage}
-              maxLength={24}
-            />
-            {formData.title.length >= 25 && (
-              <Ionicons
-                name="alert-circle"
-                size={20}
-                color="#ef4444"
-                className="mr-3"
-              />
-            )}
-          </View>
-        </View>
-
-        {/* Price Input */}
-        <View className="mb-5">
-          <View className="flex-row justify-between items-center">
-            <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
-              Price (₱)
-            </Text>
-            <Text
-              className={`text-xs ${
-                formData.price && parseFloat(formData.price) >= 100000
-                  ? "text-red-500 font-semibold"
-                  : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              {formData.price
-                ? `₱${parseFloat(formData.price).toLocaleString()}`
-                : ""}
-            </Text>
-          </View>
-          <View
-            className={`flex-row items-center border rounded-lg bg-white dark:bg-gray-800/60 ${
-              formData.price && parseFloat(formData.price) >= 100000
-                ? "border-red-500 bg-red-50 dark:bg-red-950/30"
-                : "border-gray-300 dark:border-gray-700"
-            }`}
-          >
-            <TextInput
-              value={formData.price}
-              onChangeText={(text) => updateFormField("price", text)}
-              placeholder="Enter price (max ₱99,999)"
-              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-              keyboardType="decimal-pad"
-              className="flex-1 p-3 text-base text-gray-900 dark:text-gray-100"
-              editable={!isUploadingImage}
-            />
-            {formData.price && parseFloat(formData.price) >= 100000 && (
-              <Ionicons
-                name="alert-circle"
-                size={20}
-                color="#ef4444"
-                className="mr-3"
-              />
-            )}
-          </View>
-        </View>
-
-        {/* Description Input */}
-        <View className="mb-5">
-          <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
-            Description
-          </Text>
-          <TextInput
-            value={formData.description}
-            onChangeText={(text) => updateFormField("description", text)}
-            placeholder="Describe your product"
-            placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-            multiline
-            numberOfLines={4}
-            className="border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/60 rounded-lg p-3 text-base text-gray-900 dark:text-gray-100"
-            textAlignVertical="top"
-            editable={!isUploadingImage}
-          />
-        </View>
-
-        <TagsSelection
-          formData={formData}
-          disabled={isUploadingImage}
-          onSelectCategory={(category) =>
-            updateFormField("category", category)
+        open={showSuggestionModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleRejectSuggestion();
           }
-        />
-
-        <CategorySpecificFields
-          formData={formData}
-          disabled={isUploadingImage}
-          onFieldChange={(field, value) => updateFormField(field, value)}
-        />
-
-        <AdditionalImagesSection
-          additionalImages={formData.additionalImages || []}
-          disabled={isUploadingImage}
-          onPickImages={pickAdditionalImages}
-          onRemoveImage={removeAdditionalImage}
-        />
-
-        {/* Error Display */}
-        {uploadError && (
-          <View className="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800">
-            <View className="flex-row items-start">
-              <Ionicons
-                name="alert-circle"
-                size={18}
-                color="#dc2626"
-                style={{ marginTop: 1 }}
-              />
-              <Text className="ml-2 text-red-700 dark:text-red-400 text-sm flex-1">
-                {uploadError}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        <TouchableOpacity
-          onPress={handlePublish}
-          className={`mt-2 p-4 rounded-lg items-center ${
-            isUploadingImage
-              ? "bg-gray-400 dark:bg-gray-700"
-              : !isAuthenticated
-                ? "bg-orange-500"
-                : "bg-green-600 dark:bg-green-600"
+        }}
+      >
+        <DialogContent
+          className={`w-full max-w-sm rounded-3xl border ${
+            isDark
+              ? "bg-[#0e0e0e] border-[#01170f]"
+              : "bg-[#f3f3f3] border-gray-200"
           }`}
-          disabled={isUploadingImage}
         >
-          {isUploadingImage ? (
-            <ActivityIndicator color="#fff" size="large" />
-          ) : !isAuthenticated ? (
-            <Text className="text-white font-bold text-base">
-              🔐 Login to Post
-            </Text>
-          ) : (
-            <Text className="text-white font-bold text-base">
-              Publish Post
-            </Text>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+              UNISUKI Suggestion
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-300">
+              Based on your image, we suggest the following details:
+            </DialogDescription>
+          </DialogHeader>
+
+          {suggestedData && (
+            <View
+              className={`rounded-xl p-4 mb-6 gap-3 border ${
+                isDark
+                  ? "bg-[#0e0e0e] border-[#01170f]"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              <View>
+                <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Title
+                </Text>
+                <Text className="text-sm font-medium text-gray-900 dark:text-white">
+                  {suggestedData.title}
+                </Text>
+              </View>
+
+              <View>
+                <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Category
+                </Text>
+                <Text className="text-sm font-medium text-gray-900 dark:text-white">
+                  {suggestedData.category}
+                </Text>
+              </View>
+
+              <View>
+                <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Price
+                </Text>
+                <Text className="text-sm font-medium text-gray-900 dark:text-white">
+                  ₱{suggestedData.price}
+                </Text>
+              </View>
+
+              <View>
+                <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                  Description
+                </Text>
+                <Text className="text-sm font-medium text-gray-900 dark:text-white">
+                  {suggestedData.description}
+                </Text>
+              </View>
+            </View>
           )}
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  </KeyboardAvoidingView>
-</SafeAreaView>
+
+          <View className="flex-row gap-3">
+            <TouchableOpacity
+              onPress={handleRejectSuggestion}
+              className={`flex-1 border rounded-xl py-3 items-center ${
+                isDark
+                  ? "border-[#01170f] bg-[#0e0e0e]"
+                  : "border-gray-300 bg-white"
+              }`}
+            >
+              <Text className="font-semibold text-gray-700 dark:text-gray-300">
+                Skip
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleAcceptSuggestion}
+              className="flex-1 bg-emerald-600 dark:bg-[#065f46] rounded-xl py-3 items-center"
+            >
+              <Text className="font-semibold text-white">Accept</Text>
+            </TouchableOpacity>
+          </View>
+        </DialogContent>
+      </Dialog>
+
+      <SafeAreaView
+        edges={["top"]}
+        className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 32 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Navigation Controls Overlay */}
+            <View className="z-10 absolute top-4 left-0 right-0 flex-row justify-between px-4">
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="bg-black/60 dark:bg-black/80 rounded-full p-2"
+              >
+                <Ionicons name="chevron-back" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="bg-black/60 dark:bg-black/80 rounded-full p-2"
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Image Preview */}
+            <View className="h-80 bg-gray-200 dark:bg-[#01170f] m-2 rounded-2xl relative overflow-hidden">
+              <Image
+                source={{ uri: capturedImage.uri }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            </View>
+
+            <View className="px-5 pt-6">
+              {/* Title Input */}
+              <View className="mb-5">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
+                    Product Name
+                  </Text>
+                  <Text
+                    className={`text-xs ${
+                      formData.title.length >= 25
+                        ? "text-red-500 font-semibold"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {formData.title.length}/24
+                  </Text>
+                </View>
+                <View
+                  className={`flex-row items-center border rounded-xl bg-white dark:bg-[#0e0e0e] ${
+                    formData.title.length >= 25
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/30"
+                      : "border-gray-300 dark:border-[#01170f]"
+                  }`}
+                >
+                  <TextInput
+                    value={formData.title}
+                    onChangeText={(text) => updateFormField("title", text)}
+                    placeholder="Enter product name (max 24 chars)"
+                    placeholderTextColor={isDark ? "#e2e2e2" : "#9ca3af"}
+                    className="flex-1 p-3 text-base text-gray-900 dark:text-white"
+                    editable={!isUploadingImage}
+                    maxLength={24}
+                  />
+                  {formData.title.length >= 25 && (
+                    <Ionicons
+                      name="alert-circle"
+                      size={20}
+                      color="#ef4444"
+                      className="mr-3"
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/* Price Input */}
+              <View className="mb-5">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
+                    Price (₱)
+                  </Text>
+                  <Text
+                    className={`text-xs ${
+                      formData.price && parseFloat(formData.price) >= 100000
+                        ? "text-red-500 font-semibold"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {formData.price
+                      ? `₱${parseFloat(formData.price).toLocaleString()}`
+                      : ""}
+                  </Text>
+                </View>
+                <View
+                  className={`flex-row items-center border rounded-xl bg-white dark:bg-[#0e0e0e] ${
+                    formData.price && parseFloat(formData.price) >= 100000
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/30"
+                      : "border-gray-300 dark:border-[#01170f]"
+                  }`}
+                >
+                  <TextInput
+                    value={formData.price}
+                    onChangeText={(text) => updateFormField("price", text)}
+                    placeholder="Enter price (max ₱99,999)"
+                    placeholderTextColor={isDark ? "#e2e2e2" : "#9ca3af"}
+                    keyboardType="decimal-pad"
+                    className="flex-1 p-3 text-base text-gray-900 dark:text-white"
+                    editable={!isUploadingImage}
+                  />
+                  {formData.price && parseFloat(formData.price) >= 100000 && (
+                    <Ionicons
+                      name="alert-circle"
+                      size={20}
+                      color="#ef4444"
+                      className="mr-3"
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/* Description Input */}
+              <View className="mb-5">
+                <Text className="text-gray-800 dark:text-gray-200 font-semibold mb-2">
+                  Description
+                </Text>
+                <TextInput
+                  value={formData.description}
+                  onChangeText={(text) => updateFormField("description", text)}
+                  placeholder="Describe your product"
+                  placeholderTextColor={isDark ? "#e2e2e2" : "#9ca3af"}
+                  multiline
+                  numberOfLines={4}
+                  className="border border-gray-300 dark:border-[#01170f] bg-white dark:bg-[#0e0e0e] rounded-xl p-3 text-base text-gray-900 dark:text-white"
+                  textAlignVertical="top"
+                  editable={!isUploadingImage}
+                />
+              </View>
+
+              <TagsSelection
+                formData={formData}
+                disabled={isUploadingImage}
+                onSelectCategory={(category) =>
+                  updateFormField("category", category)
+                }
+              />
+
+              <CategorySpecificFields
+                formData={formData}
+                disabled={isUploadingImage}
+                onFieldChange={(field, value) => updateFormField(field, value)}
+              />
+
+              <AdditionalImagesSection
+                additionalImages={formData.additionalImages || []}
+                disabled={isUploadingImage}
+                onPickImages={pickAdditionalImages}
+                onRemoveImage={removeAdditionalImage}
+              />
+
+              {/* Error Display */}
+              {uploadError && (
+                <View className="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800">
+                  <View className="flex-row items-start">
+                    <Ionicons
+                      name="alert-circle"
+                      size={18}
+                      color="#dc2626"
+                      style={{ marginTop: 1 }}
+                    />
+                    <Text className="ml-2 text-red-700 dark:text-red-400 text-sm flex-1">
+                      {uploadError}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              <TouchableOpacity
+                onPress={handlePublish}
+                className={`mt-2 p-4 rounded-xl items-center ${
+                  isUploadingImage
+                    ? "bg-gray-400 dark:bg-gray-700"
+                    : !isAuthenticated
+                    ? "bg-orange-500"
+                    : "bg-emerald-600 dark:bg-[#065f46]"
+                }`}
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? (
+                  <ActivityIndicator color="#fff" size="large" />
+                ) : !isAuthenticated ? (
+                  <Text className="text-white font-bold text-base">
+                    🔐 Login to Post
+                  </Text>
+                ) : (
+                  <Text className="text-white font-bold text-base">
+                    Publish Post
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </>
   );
 }

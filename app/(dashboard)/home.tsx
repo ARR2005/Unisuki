@@ -70,10 +70,10 @@ export default function Home() {
   };
 
   return (
-    <View className={`flex-1`}>
+    <View className="flex-1 bg-transparent">
       <View style={styles.content}>
         <Header />
-        <View className={`pb-4 rounded-b-full `}>
+        <View className="pb-4">
           <View
             style={[
               styles.modeSwitcher,
@@ -105,8 +105,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   modeSwitcherDark: {
-    borderColor: "#1f2937",
-    backgroundColor: "rgba(14, 14, 14, 0.2)",
+    borderColor: "#01170f",
+    backgroundColor: "#0e0e0e",
   },
   modeButton: {
     flex: 1,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   activeModeButtonDark: {
-    backgroundColor: "#065f46", // bg-emerald-900 / green-800 equivalent
+    backgroundColor: "#065f46",
     elevation: 1,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
