@@ -3,33 +3,32 @@ import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import {
-    doc,
-    getDoc,
-    onSnapshot,
-    serverTimestamp,
-    updateDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    useColorScheme,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Modal,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useColorScheme,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
-// Helper to format Firestore timestamps or Date objects
 function formatTime(timestamp: any): string {
   if (!timestamp) return "";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Header banner for Reservation status & QR actions
 function ReservationQRHeader({
   chatId,
   reservationData,
@@ -44,9 +43,16 @@ function ReservationQRHeader({
   const router = useRouter();
   const [showQRModal, setShowQRModal] = useState(false);
 
-  const itemTitle = reservationData?.itemTitle || "Reserved Item";
-  const totalPrice = reservationData?.totalPrice || 0;
+  const itemTitle =
+    reservationData?.itemTitle || reservationData?.productTitle || "Reserved Item";
+  const totalPrice =
+    reservationData?.totalPrice || reservationData?.price || 0;
   const status = reservationData?.status || "pending";
+  const productImage =
+    reservationData?.itemImage || reservationData?.productImage || null;
+
+  const isConfirmed = status === "completed" || status === "confirmed";
+  const isRejected = status === "declined" || status === "rejected";
 
   const handleDeclineReservation = async () => {
     try {
@@ -63,7 +69,7 @@ function ReservationQRHeader({
           "user",
           reservationData.sellerId,
           "itemPosted",
-          reservationData.productId,
+          reservationData.productId
         );
         await updateDoc(productRef, {
           isReserved: false,
@@ -96,69 +102,178 @@ function ReservationQRHeader({
   return (
     <>
       <View
-        className={`p-3 px-4 flex-row items-center justify-between border-b ${
+        className={`mx-3 mt-3 mb-2 rounded-2xl border overflow-hidden ${
           isDark
-            ? "bg-slate-800/80 border-slate-700/60"
-            : "bg-emerald-50/70 border-emerald-100"
+            ? "bg-[#0e0e0e]/60 border-slate-800"
+            : "bg-white border-gray-200/80"
         }`}
+        style={{
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.25 : 0.06,
+          shadowRadius: 6,
+          elevation: 3,
+        }}
       >
-        <View className="flex-1 mr-3">
+        {/* Top Header Row */}
+        <View
+          className={`px-3 py-2 border-b ${
+            isDark ? "border-slate-800 bg-white/5" : "border-gray-100 bg-gray-50/50"
+          }`}
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 mr-2">
+              <Text
+                className={`text-[10px] font-bold uppercase tracking-wider ${
+                  isDark ? "text-emerald-400" : "text-emerald-800"
+                }`}
+              >
+                {isSeller
+                  ? "Show QR to buyer upon meeting"
+                  : isConfirmed
+                  ? "Scanned the QR code"
+                  : "Scan QR code"}
+              </Text>
+              <Text
+                className={`text-xs font-semibold ${
+                  isDark ? "text-gray-200" : "text-gray-800"
+                }`}
+                numberOfLines={1}
+              >
+                {isSeller
+                  ? ""
+                  : isConfirmed
+                  ? "Scanned the QR to proceed to transaction"
+                  : "Scan seller's QR code to confirm item handover"}
+              </Text>
+            </View>
+
+            {/* Actions / Badges */}
+            {isConfirmed ? (
+              <View className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950/60 rounded-full border border-emerald-300 dark:border-emerald-700/50">
+                <Text className="text-emerald-700 dark:text-emerald-400 font-bold text-[11px]">
+                  ✓ Confirmed
+                </Text>
+              </View>
+            ) : isRejected ? (
+              <View className="px-3 py-1 bg-rose-100 dark:bg-rose-950/60 rounded-full border border-rose-300 dark:border-rose-700/50">
+                <Text className="text-rose-700 dark:text-rose-400 font-bold text-[11px]">
+                  ✗ Declined
+                </Text>
+              </View>
+            ) : isSeller ? (
+              <View className="flex-row items-center gap-1.5">
+                <TouchableOpacity
+                  onPress={handleDeclineReservation}
+                  className="flex-row items-center gap-1 bg-rose-600 px-2.5 py-1.5 rounded-xl active:bg-rose-700"
+                >
+                  <Ionicons name="close-circle-outline" size={14} color="#fff" />
+                  <Text className="text-white font-bold text-xs">Decline</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setShowQRModal(true)}
+                  className="flex-row items-center gap-1 bg-emerald-600 px-2.5 py-1.5 rounded-xl active:bg-emerald-700"
+                >
+                  <Ionicons name="qr-code-outline" size={14} color="#fff" />
+                  <Text className="text-white font-bold text-xs">Show QR</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={handleOpenScanner}
+                className="flex-row items-center gap-1.5 bg-emerald-600 px-3 py-1.5 rounded-xl active:bg-emerald-700"
+              >
+                <Ionicons name="camera-outline" size={15} color="#fff" />
+                <Text className="text-white font-bold text-xs">Scan QR</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Product Info Section */}
+        <View className="flex-row items-center p-3 gap-3">
+          {productImage ? (
+            <Image
+              source={{ uri: productImage }}
+              className="w-14 h-14 rounded-xl bg-gray-200"
+              resizeMode="cover"
+            />
+          ) : (
+            <View
+              className={`w-14 h-14 rounded-xl items-center justify-center ${
+                isDark ? "bg-[#0e0e0e]/20" : "bg-gray-100"
+              }`}
+            >
+              <Ionicons
+                name="image-outline"
+                size={22}
+                color={isDark ? "#9CA3AF" : "#6B7280"}
+              />
+            </View>
+          )}
+          <View className="flex-1">
+            <Text
+              className={`font-bold text-sm ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+              numberOfLines={2}
+            >
+              {itemTitle}
+            </Text>
+            <Text className="text-xs font-semibold mt-0.5 text-emerald-500 dark:text-emerald-400">
+              ₱ {Number(totalPrice).toFixed(2)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Meetup Notes Section */}
+        <View
+          className={`px-3 pb-3 gap-2 border-t ${
+            isDark ? "border-slate-800" : "border-gray-100"
+          }`}
+        >
           <Text
-            numberOfLines={1}
-            className={`font-bold text-xs ${
+            className={`text-xs font-bold uppercase tracking-wider mt-2.5 ${
               isDark ? "text-emerald-400" : "text-emerald-800"
             }`}
           >
-            {itemTitle}
+            Meetup Notes
           </Text>
-          <Text className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-            Total: ₱{Number(totalPrice).toFixed(2)} • Status:{" "}
-            <Text className="font-semibold text-emerald-600 dark:text-emerald-400">
-              {status.toUpperCase()}
+          <View className="flex-row items-start gap-2">
+            <Ionicons
+              name="location-outline"
+              size={15}
+              color={isDark ? "#34d399" : "#059669"}
+              style={{ marginTop: 1 }}
+            />
+            <Text
+              className={`text-xs flex-1 ${
+                isDark ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Where to meet — agree on one campus spot like the library,
+              canteen, or main gate
             </Text>
-          </Text>
+          </View>
+          <View className="flex-row items-start gap-2">
+            <Ionicons
+              name="time-outline"
+              size={15}
+              color={isDark ? "#34d399" : "#059669"}
+              style={{ marginTop: 1 }}
+            />
+            <Text
+              className={`text-xs flex-1 ${
+                isDark ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Time & date — confirm the day and time together
+            </Text>
+          </View>
         </View>
-
-        {status === "completed" ? (
-          <View className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950/60 rounded-full">
-            <Text className="text-emerald-700 dark:text-emerald-400 font-bold text-[11px]">
-              Completed
-            </Text>
-          </View>
-        ) : status === "declined" ? (
-          <View className="px-3 py-1 bg-rose-100 dark:bg-rose-950/60 rounded-full">
-            <Text className="text-rose-700 dark:text-rose-400 font-bold text-[11px]">
-              Declined
-            </Text>
-          </View>
-        ) : isSeller ? (
-          <View className="flex-row items-center gap-2">
-            <TouchableOpacity
-              onPress={handleDeclineReservation}
-              className="flex-row items-center gap-1.5 bg-rose-600 px-3 py-1.5 rounded-xl active:bg-rose-700"
-            >
-              <Ionicons name="close-circle-outline" size={16} color="#fff" />
-              <Text className="text-white font-bold text-xs">Decline</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowQRModal(true)}
-              className="flex-row items-center gap-1.5 bg-emerald-600 px-3 py-1.5 rounded-xl active:bg-emerald-700"
-            >
-              <Ionicons name="qr-code-outline" size={16} color="#fff" />
-              <Text className="text-white font-bold text-xs">Show QR</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            onPress={handleOpenScanner}
-            className="flex-row items-center gap-1.5 bg-emerald-600 px-3 py-1.5 rounded-xl active:bg-emerald-700"
-          >
-            <Ionicons name="camera-outline" size={16} color="#fff" />
-            <Text className="text-white font-bold text-xs">Scan QR</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
+      {/* QR Modal for Seller */}
       {isSeller && (
         <Modal
           visible={showQRModal}
@@ -168,8 +283,10 @@ function ReservationQRHeader({
         >
           <View className="flex-1 bg-black/70 items-center justify-center p-6">
             <View
-              className={`w-full max-w-xs p-6 rounded-3xl items-center ${
-                isDark ? "bg-slate-800" : "bg-white"
+              className={`w-full max-w-xs p-6 rounded-3xl items-center border ${
+                isDark
+                  ? "bg-[#0e0e0e] border-slate-800"
+                  : "bg-white border-gray-200"
               }`}
             >
               <Text
@@ -193,7 +310,7 @@ function ReservationQRHeader({
 
               <TouchableOpacity
                 onPress={() => setShowQRModal(false)}
-                className="mt-5 w-full py-2.5 bg-gray-200 dark:bg-slate-700 rounded-xl"
+                className="mt-5 w-full py-2.5 bg-gray-200 dark:bg-slate-800 rounded-xl"
               >
                 <Text
                   className={`text-center font-bold text-sm ${
@@ -224,9 +341,8 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [reservationData, setReservationData] = useState<any>(null);
 
-  // Use param name if available, otherwise fallback to "User"
   const [headerTitle, setHeaderTitle] = useState<string>(
-    otherUserName || "User",
+    otherUserName || "User"
   );
 
   const currentUser = auth.currentUser;
@@ -260,38 +376,41 @@ export default function ChatScreen() {
 
             const resolvedName = matchingName || fallbackName || otherUserName;
 
+            // Fetch user profile from Firestore prioritizing username
+            try {
+              let userRef = doc(db, "user", otherUid);
+              let userSnap = await getDoc(userRef);
+
+              if (!userSnap.exists()) {
+                userRef = doc(db, "users", otherUid);
+                userSnap = await getDoc(userRef);
+              }
+
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                // Prioritize username over name / fullName / displayName
+                const fetchedName =
+                  userData.username ||
+                  userData.name ||
+                  userData.fullName ||
+                  userData.displayName;
+
+                if (fetchedName) {
+                  setHeaderTitle(fetchedName);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching participant details:", err);
+            }
+
             if (resolvedName) {
               setHeaderTitle(resolvedName);
-            } else {
-              try {
-                let userRef = doc(db, "user", otherUid);
-                let userSnap = await getDoc(userRef);
-
-                if (!userSnap.exists()) {
-                  userRef = doc(db, "users", otherUid);
-                  userSnap = await getDoc(userRef);
-                }
-
-                if (userSnap.exists()) {
-                  const userData = userSnap.data();
-                  const fetchedName =
-                    userData.name ||
-                    userData.username ||
-                    userData.fullName ||
-                    userData.displayName;
-
-                  if (fetchedName) {
-                    setHeaderTitle(fetchedName);
-                  }
-                }
-              } catch (err) {
-                console.error("Error fetching participant details:", err);
-              }
             }
           }
         }
       },
-      (err) => console.error("Error listening to chat details:", err),
+      (err) => console.error("Error listening to chat details:", err)
     );
 
     return () => unsubscribe();
@@ -309,18 +428,16 @@ export default function ChatScreen() {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
-      {/* Explicit Header Configuration */}
+    <View className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}>
       <Stack.Screen
         options={{
           title: headerTitle,
           headerTitle: headerTitle,
-          headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" },
-          headerTintColor: isDark ? "#ffffff" : "#0f172a",
+          headerStyle: { backgroundColor: isDark ? "#0e0e0e" : "#ffffff" },
+          headerTintColor: isDark ? "#ffffff" : "#111827",
         }}
       />
 
-      {/* Sticky QR Verification Bar */}
       {isReservation === "true" && (
         <ReservationQRHeader
           chatId={chatId}
@@ -330,7 +447,6 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* Messages List */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#059669" />
@@ -374,8 +490,8 @@ export default function ChatScreen() {
                     isMe
                       ? "text-white"
                       : isDark
-                        ? "text-gray-100"
-                        : "text-gray-800"
+                      ? "text-gray-100"
+                      : "text-gray-800"
                   }`}
                 >
                   {item.text}
@@ -398,10 +514,9 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* Message Input Box */}
       <View
         className={`p-2.5 px-3 flex-row items-center gap-2 border-t ${
-          isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"
+          isDark ? "bg-[#0e0e0e] border-slate-800" : "bg-white border-gray-200/80"
         }`}
       >
         <TextInput

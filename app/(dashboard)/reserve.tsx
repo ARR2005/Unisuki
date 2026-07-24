@@ -67,6 +67,7 @@ export default function ReservationsScreen() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
+      case "confirmed":
         return {
           bg: "bg-emerald-100 dark:bg-emerald-950/50",
           text: "text-emerald-700 dark:text-emerald-400",
@@ -79,10 +80,12 @@ export default function ReservationsScreen() {
           label: "Completed",
         };
       case "cancelled":
+      case "declined":
+      case "rejected":
         return {
-          bg: "bg-red-100 dark:bg-red-950/50",
-          text: "text-red-700 dark:text-red-400",
-          label: "Cancelled",
+          bg: "bg-rose-100 dark:bg-rose-950/50",
+          text: "text-rose-700 dark:text-rose-400",
+          label: "Closed / Declined",
         };
       default:
         return {
@@ -94,6 +97,15 @@ export default function ReservationsScreen() {
   };
 
   const handleOpenChat = (item: any) => {
+    // Block routing if the item is completed, cancelled, or declined
+    const isClosed =
+      item.status === "completed" ||
+      item.status === "cancelled" ||
+      item.status === "declined" ||
+      item.status === "rejected";
+
+    if (isClosed) return;
+
     const chatId =
       item.chatId || `${item.buyerId}_${item.sellerId}_${item.productId}_res`;
     router.push({
@@ -134,7 +146,7 @@ export default function ReservationsScreen() {
   };
 
   return (
-    <View className={`flex-1`}>
+    <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Screen Header */}
@@ -148,7 +160,7 @@ export default function ReservationsScreen() {
         </Text>
       </View>
 
-      {/* Mode Switcher matching Home design */}
+      {/* Mode Switcher */}
       <View style={styles.switcherContainer}>
         <View
           style={[
@@ -193,7 +205,7 @@ export default function ReservationsScreen() {
               </Text>
               <Text
                 className={`mt-1 text-sm text-center px-8 ${
-                  isDark ? "text-gray-300" : "text-gray-300"
+                  isDark ? "text-gray-400" : "text-gray-500"
                 }`}
               >
                 {activeMode === "buyer"
@@ -204,29 +216,39 @@ export default function ReservationsScreen() {
           }
           renderItem={({ item }) => {
             const badge = getStatusBadge(item.status);
+            const isClosed =
+              item.status === "completed" ||
+              item.status === "cancelled" ||
+              item.status === "declined" ||
+              item.status === "rejected";
 
             return (
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={isClosed ? 1 : 0.8}
+                disabled={isClosed}
                 onPress={() => handleOpenChat(item)}
                 className={`mb-4 p-4 rounded-2xl border ${
-                  isDark
-                    ? "bg-gray-500/20 border-gray-200/10"
-                    : "bg-white border-gray-200/80"
+                  isClosed
+                    ? isDark
+                      ? "bg-[#0e0e0e]/20 border-slate-800/40 opacity-60"
+                      : "bg-gray-100/60 border-gray-200 opacity-60"
+                    : isDark
+                    ? "bg-[#0e0e0e]/40 border-slate-800"
+                    : "bg-white border-emerald-200"
                 }`}
                 style={{
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: isDark ? 0.2 : 0.05,
                   shadowRadius: 6,
-                  elevation: 2,
+                  elevation: isClosed ? 0 : 2,
                 }}
               >
                 <View className="flex-row gap-3">
                   {/* Thumbnail */}
-                  {item.imageUri ? (
+                  {item.imageUri || item.itemImage ? (
                     <Image
-                      source={{ uri: item.imageUri }}
+                      source={{ uri: item.imageUri || item.itemImage }}
                       className="w-20 h-20 rounded-xl bg-gray-200"
                       resizeMode="cover"
                     />
@@ -254,7 +276,7 @@ export default function ReservationsScreen() {
                             isDark ? "text-white" : "text-gray-900"
                           }`}
                         >
-                          {item.title}
+                          {item.title || item.itemTitle || "Reserved Item"}
                         </Text>
 
                         {/* Status Badge */}
@@ -271,18 +293,33 @@ export default function ReservationsScreen() {
                       </Text>
                     </View>
 
-                    {/* Chat Action Prompt */}
+                    {/* Chat Action Prompt or Archived Disabled Badge */}
                     <View className="flex-row items-center justify-between mt-2">
-                      <Text className="text-xs text-gray-400">
-                        {activeMode === "buyer"
-                          ? "Chat with seller"
-                          : "Chat with buyer"}
-                      </Text>
-                      <Ionicons
-                        name="chatbubble-ellipses-outline"
-                        size={18}
-                        color="#059669"
-                      />
+                      {isClosed ? (
+                        <View className="flex-row items-center gap-1">
+                          <Ionicons
+                            name="lock-closed-outline"
+                            size={14}
+                            color={isDark ? "#64748b" : "#9ca3af"}
+                          />
+                          <Text className="text-xs text-gray-500 font-medium">
+                            Transaction closed
+                          </Text>
+                        </View>
+                      ) : (
+                        <>
+                          <Text className="text-xs text-gray-400">
+                            {activeMode === "buyer"
+                              ? "Chat with seller"
+                              : "Chat with buyer"}
+                          </Text>
+                          <Ionicons
+                            name="chatbubble-ellipses-outline"
+                            size={18}
+                            color="#059669"
+                          />
+                        </>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -329,7 +366,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   activeModeButtonDark: {
-    backgroundColor: "#065f46", // Tailwind green-800 / emerald-900 equivalent
+    backgroundColor: "#065f46",
     elevation: 1,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },

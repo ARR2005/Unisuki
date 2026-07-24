@@ -130,7 +130,7 @@ export default function Validation() {
 
           <View className="w-full flex-1">{renderStep()}</View>
 
-          <View className="pt-2 pb-10 w-full border-t border-slate-200 dark:border-slate-800 flex-row items-center justify-between px-6">
+          <View className="pt-2 pb-10 w-full border-t border-slate-200 dark:border-green-800 flex-row items-center justify-between px-6">
             <TouchableOpacity
               onPress={prev}
               disabled={currentStep === 1}

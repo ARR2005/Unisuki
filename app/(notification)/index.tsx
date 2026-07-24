@@ -200,7 +200,7 @@ export default function NotificationsPage() {
       default:
         return {
           bg: isDark ? "bg-[#0e0e0e]/40" : "bg-gray-100/40",
-          border: isDark ? "border-slate-800" : "border-gray-200",
+          border: isDark ? "border-green-800" : "border-gray-200",
           iconBg: isDark ? "bg-slate-700" : "bg-gray-200",
           iconName: "notifications-outline",
           iconColor: isDark ? "#ffffff" : "#374151",
@@ -216,7 +216,7 @@ export default function NotificationsPage() {
       {/* Header */}
       <View
         className={`flex-row items-center justify-between px-4 pb-4 border-b ${
-          isDark ? "border-slate-800" : "border-gray-200"
+          isDark ? "border-green-800" : "border-gray-200"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()}>

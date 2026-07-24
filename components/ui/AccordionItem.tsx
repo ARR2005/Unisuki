@@ -21,33 +21,41 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   const isDark = colorScheme === "dark";
 
   return (
-    <View 
-      className={`border-b ${isDark ? "border-slate-700" : "border-gray-100"}`}
+    <View
+      className={`border-b ${
+        isDark ? "border-[#01170f]" : "border-gray-200"
+      }`}
     >
-      <TouchableOpacity 
-        onPress={onPress} 
-        className={`flex-row items-center p-4 active:opacity-70`}
+      <TouchableOpacity
+        onPress={onPress}
+        className="flex-row items-center p-4 active:opacity-70"
       >
-        <Ionicons 
-          name={icon} 
-          size={22} 
-          color={isDark ? "#10b981" : "#059669"} 
+        <Ionicons
+          name={icon}
+          size={22}
+          color={isDark ? "#10b981" : "#059669"}
         />
-        <Text className={`flex-1 ml-4 text-base font-semibold ${
-          isDark ? "text-white" : "text-gray-900"
-        }`}>
+        <Text
+          className={`flex-1 ml-4 text-base font-semibold ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
           {title}
         </Text>
         <Ionicons
           name={isOpen ? "chevron-down" : "chevron-forward"}
           size={20}
-          color={isDark ? "#6B7280" : "#9CA3AF"}
+          color={isDark ? "#64748b" : "#9CA3AF"}
         />
       </TouchableOpacity>
       {isOpen && (
-        <View className={`px-4 py-3 border-t ${
-          isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-100"
-        }`}>
+        <View
+          className={`px-4 py-3 border-t ${
+            isDark
+              ? "bg-[#0e0e0e] border-[#01170f]"
+              : "bg-gray-50 border-gray-200"
+          }`}
+        >
           {children}
         </View>
       )}

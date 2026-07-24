@@ -23,7 +23,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         className={`flex-row items-center rounded-full px-4 py-1.5 border ${
           isDark
             ? "bg-white/5 border-white/80"
-            : "bg-black/20 border-black/10"
+            : "bg-white/60 border-white"
         }`}
         style={{
           shadowColor: "#000",

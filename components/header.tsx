@@ -132,7 +132,7 @@ export default function Header() {
           onPress={handleNotificationPress}
           className={`p-3 rounded-full border ${
             isDark
-              ? "bg-[#0e0e0e]/40 border-slate-800"
+              ? "bg-[#0e0e0e]/40 border-green-800"
               : "bg-white border-gray-200"
           }`}
           activeOpacity={0.7}

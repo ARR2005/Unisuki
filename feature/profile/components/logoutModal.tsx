@@ -1,19 +1,49 @@
-import React from "react";
-import { Modal, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
+import { auth } from "@/service/firebaseConfigs";
+import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
 
 interface LogoutModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
 }
 
-const LogoutModal: React.FC<LogoutModalProps> = ({
-  visible,
-  onCancel,
-  onConfirm,
-}) => {
+const LogoutModal: React.FC<LogoutModalProps> = ({ visible, onCancel }) => {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { clearLogin } = useAuthPersistence();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+
+      // 1. Clear saved credentials from AsyncStorage
+      await clearLogin();
+
+      // 2. Sign out from Firebase Auth
+      await signOut(auth);
+
+      // 3. Close modal state & Navigate to Auth screen
+      onCancel();
+      router.replace("/(auth)");
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert("Failed to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <Modal
@@ -22,17 +52,17 @@ const LogoutModal: React.FC<LogoutModalProps> = ({
       visible={visible}
       onRequestClose={onCancel}
     >
-      {/* Dynamic Overlay Backdrop */}
+      {/* Backdrop */}
       <View
         className={`flex-1 justify-center items-center px-4 ${
-          isDark ? "bg-gray-900/60" : "bg-black/30"
+          isDark ? "bg-black/70" : "bg-black/30"
         }`}
       >
         {/* Modal Dialog Container */}
         <View
           className={`rounded-2xl p-6 w-full max-w-sm border ${
             isDark
-              ? "bg-[#0e0e0e] border-slate-700"
+              ? "bg-[#0e0e0e] border-slate-800"
               : "bg-[#f3f3f3] border-gray-200"
           }`}
           style={{
@@ -53,7 +83,7 @@ const LogoutModal: React.FC<LogoutModalProps> = ({
 
           <Text
             className={`text-sm text-center my-4 ${
-              isDark ? "text-gray-300" : "text-gray-600"
+              isDark ? "text-gray-400" : "text-gray-600"
             }`}
           >
             Are you sure you want to logout?
@@ -62,9 +92,10 @@ const LogoutModal: React.FC<LogoutModalProps> = ({
           {/* Action Buttons */}
           <View className="flex-row justify-center gap-3 mt-2">
             <TouchableOpacity
+              disabled={isLoggingOut}
               className={`flex-1 py-3 rounded-xl border active:opacity-80 ${
                 isDark
-                  ? "bg-slate-700 border-slate-600"
+                  ? "bg-[#0e0e0e]/40 border-slate-800"
                   : "bg-white border-gray-300"
               }`}
               onPress={onCancel}
@@ -79,12 +110,17 @@ const LogoutModal: React.FC<LogoutModalProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 bg-red-600 py-3 rounded-xl active:bg-red-700"
-              onPress={onConfirm}
+              disabled={isLoggingOut}
+              className="flex-1 bg-red-600 py-3 rounded-xl active:bg-red-700 items-center justify-center"
+              onPress={handleLogout}
             >
-              <Text className="text-center font-bold text-white text-sm">
-                Logout
-              </Text>
+              {isLoggingOut ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text className="text-center font-bold text-white text-sm">
+                  Logout
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>

@@ -24,6 +24,9 @@ export type Product = {
   additionalImages?: string[];
   category?: string;
   condition?: string;
+  userId?: string;
+  isReserved?: boolean;
+  status?: string; // "active", "sold", etc.
   tags?: {
     title?: string;
     type?: string;
@@ -51,18 +54,28 @@ export function useFetchSellerProducts() {
       unsubscribeFirestore = onSnapshot(
         query(userItemsRef),
         (snapshot) => {
-          setProducts(
-            snapshot.docs.map((docSnap) => ({
+          const allProducts = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
               id: docSnap.id,
-              ...(docSnap.data() as Omit<Product, "id">),
-            })),
+              ...(data as Omit<Product, "id">),
+              userId: user.uid,
+              status: data.status || "active",
+            };
+          });
+
+          // Filter out items that have been sold
+          const activeProducts = allProducts.filter(
+            (product) => product.status !== "sold"
           );
+
+          setProducts(activeProducts);
           setLoading(false);
         },
         (error) => {
           console.error("Firestore read error:", error);
           setLoading(false);
-        },
+        }
       );
     });
 
@@ -83,7 +96,7 @@ export function useUpdateProduct() {
   const updateProduct = async (
     product: Product,
     newTitle: string,
-    newPrice: string,
+    newPrice: string
   ) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return false;
@@ -102,7 +115,7 @@ export function useUpdateProduct() {
         "user",
         currentUser.uid,
         "itemPosted",
-        product.id,
+        product.id
       );
       const parsedPrice = parseFloat(newPrice) || 0;
 
@@ -145,7 +158,7 @@ export function useDeleteProduct() {
     try {
       const itemRef = doc(db, "user", currentUser.uid, "itemPosted", productId);
       const itemSnap = await getDocs(
-        query(collection(db, "user", currentUser.uid, "itemPosted")),
+        query(collection(db, "user", currentUser.uid, "itemPosted"))
       );
       const itemExists = itemSnap.docs.some((snap) => snap.id === productId);
 
@@ -159,7 +172,7 @@ export function useDeleteProduct() {
         collection(db, "chats"),
         where("productId", "==", productId),
         where("sellerId", "==", currentUser.uid),
-        where("type", "==", "reservation"),
+        where("type", "==", "reservation")
       );
 
       const reservationChats = await getDocs(reservationChatsQuery);

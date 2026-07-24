@@ -128,10 +128,10 @@ export default function SellerScreen() {
           ListHeaderComponent={
             products.length > 0 ? (
               <View
-                className={`flex-row items-center justify-between w-full py-3 border-b px-2 ${
+                className={`flex-row items-center justify-between w-full py-3 border-b px-2 border-slate-200 ${
                   isDark
-                    ? "border-slate-800 bg-[#0e0e0e]/40"
-                    : "border-gray-200 bg-gray-50"
+                    ? "bg-[#0e0e0e]/40"
+                    : "bg-gray-50"
                 }`}
               >
                 <Text
@@ -223,9 +223,7 @@ export default function SellerScreen() {
 
             return (
               <View
-                className={`flex-row items-center justify-between w-full py-3 border-b px-2 ${
-                  isDark ? "border-slate-800/60" : "border-gray-100"
-                }`}
+                className={`flex-row items-center justify-between w-full py-3 border-b px-2 border-slate-200`}
               >
                 <View className="w-12 items-center justify-center">
                   {imageUri ? (

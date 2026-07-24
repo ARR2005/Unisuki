@@ -16,6 +16,15 @@ import {
   useColorScheme,
 } from "react-native";
 
+interface UserProfileDetails {
+  name?: string;
+  username?: string;
+  age?: string;
+  idNumber?: string;
+  address?: string;
+  role?: string;
+}
+
 export default function ProfileTab() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -25,11 +34,11 @@ export default function ProfileTab() {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [userRole, setUserRole] = useState<string>("user");
+  const [userDetails, setUserDetails] = useState<UserProfileDetails>({});
 
   const currentUser = auth.currentUser;
 
-  // Listen to user role in Firestore (user/{uid})
+  // Listen to complete user profile in Firestore (user/{uid})
   useEffect(() => {
     if (!currentUser) return;
 
@@ -37,7 +46,14 @@ export default function ProfileTab() {
     const unsubscribe = onSnapshot(userRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        setUserRole(data.Role || data.role || "user");
+        setUserDetails({
+          name: data.name || "",
+          username: data.username || data.name || "",
+          age: data.age || "",
+          idNumber: data.idNumber || "",
+          address: data.address || "",
+          role: data.Role || data.role || "user",
+        });
       }
     });
 
@@ -57,31 +73,24 @@ export default function ProfileTab() {
     router.push("/(VerifyUser)");
   };
 
+  const isAdmin =
+    userDetails.role === "Admin" || userDetails.role === "admin";
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      router.replace("");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
-
-  const isAdmin = userRole === "Admin" || userRole === "admin";
-
-  const userProfile = {
+  const userProfileHeader = {
     username:
-      currentUser?.displayName || currentUser?.email?.split("@")[0] || "User",
+      userDetails.username ||
+      currentUser?.displayName ||
+      currentUser?.email?.split("@")[0] ||
+      "User",
     avatar: currentUser?.photoURL || undefined,
   };
 
   return (
-    <ScreenWrapper headerComponent={<ProfileHeader user={userProfile} />}>
-      {/* Outer Card Container styled with #0e0e0e (dark) and #f3f3f3 (light) */}
+    <ScreenWrapper headerComponent={<ProfileHeader user={userProfileHeader} />}>
       <View
         className={`rounded-3xl overflow-hidden border ${
           isDark
-            ? "bg-[#0e0e0e] border-slate-800"
+            ? "bg-[#0e0e0e] border-[#01170f]"
             : "bg-[#f3f3f3] border-gray-200"
         }`}
       >
@@ -93,22 +102,81 @@ export default function ProfileTab() {
           onPress={() => toggleAccordion("info")}
         >
           <View
-            className={`p-4 gap-4 ${isDark ? "bg-slate-900/60" : "bg-white/60"}`}
+            className={`p-4 gap-3.5 ${
+              isDark
+                ? "bg-[#0e0e0e] border-t border-[#01170f]"
+                : "bg-white/60 border-t border-gray-200"
+            }`}
           >
+            {/* Full Name */}
+            <View>
+              <Text className="text-xs text-gray-400">Full Name</Text>
+              <Text
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {userDetails.name || currentUser?.displayName || "N/A"}
+              </Text>
+            </View>
+
+            {/* Username */}
+            <View>
+              <Text className="text-xs text-gray-400">Username</Text>
+              <Text
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {userDetails.username || "N/A"}
+              </Text>
+            </View>
+
+            {/* Email */}
             <View>
               <Text className="text-xs text-gray-400">Email</Text>
               <Text
-                className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 {currentUser?.email || "N/A"}
               </Text>
             </View>
+
+            {/* Age */}
             <View>
-              <Text className="text-xs text-gray-400">Username</Text>
+              <Text className="text-xs text-gray-400">Age</Text>
               <Text
-                className={`text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
-                {userProfile.username}
+                {userDetails.age || "N/A"}
+              </Text>
+            </View>
+
+            {/* ID Number */}
+            <View>
+              <Text className="text-xs text-gray-400">ID Number</Text>
+              <Text
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {userDetails.idNumber || "N/A"}
+              </Text>
+            </View>
+
+            {/* Address */}
+            <View>
+              <Text className="text-xs text-gray-400">Address</Text>
+              <Text
+                className={`text-sm font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {userDetails.address || "N/A"}
               </Text>
             </View>
           </View>
@@ -119,7 +187,7 @@ export default function ProfileTab() {
           <TouchableOpacity
             onPress={handlePressAdminVerification}
             className={`flex-row items-center p-4 border-b ${
-              isDark ? "border-slate-800" : "border-gray-200/80"
+              isDark ? "border-[#01170f]" : "border-gray-200"
             }`}
           >
             <Ionicons
@@ -128,7 +196,9 @@ export default function ProfileTab() {
               color="#059669"
             />
             <Text
-              className={`flex-1 ml-3 font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+              className={`flex-1 ml-3 font-semibold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               User Verifications
             </Text>
@@ -144,7 +214,7 @@ export default function ProfileTab() {
         <TouchableOpacity
           onPress={() => router.push("/(profile)/purchase-history" as any)}
           className={`flex-row items-center p-4 border-b ${
-            isDark ? "border-slate-800" : "border-gray-200/80"
+            isDark ? "border-[#01170f]" : "border-gray-200"
           }`}
         >
           <Ionicons
@@ -153,7 +223,9 @@ export default function ProfileTab() {
             color={isDark ? "#9ca3af" : "#4b5563"}
           />
           <Text
-            className={`flex-1 ml-3 font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`flex-1 ml-3 font-semibold ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
           >
             Purchase History
           </Text>
@@ -168,7 +240,7 @@ export default function ProfileTab() {
         <TouchableOpacity
           onPress={() => router.push("/(profile)/redeem-coupons" as any)}
           className={`flex-row items-center p-4 border-b ${
-            isDark ? "border-slate-800" : "border-gray-200/80"
+            isDark ? "border-[#01170f]" : "border-gray-200"
           }`}
         >
           <Ionicons
@@ -177,7 +249,9 @@ export default function ProfileTab() {
             color={isDark ? "#9ca3af" : "#4b5563"}
           />
           <Text
-            className={`flex-1 ml-3 font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`flex-1 ml-3 font-semibold ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
           >
             Redeem Coupons
           </Text>
@@ -195,10 +269,18 @@ export default function ProfileTab() {
           isOpen={openAccordion === "settings"}
           onPress={() => toggleAccordion("settings")}
         >
-          <View className={isDark ? "bg-slate-900/60" : "bg-white/60"}>
-            <View className="flex-row justify-between items-center p-4 border-b border-gray-200/60 dark:border-slate-800">
+          <View
+            className={
+              isDark
+                ? "bg-[#0e0e0e] border-t border-[#01170f]"
+                : "bg-white/60 border-t border-gray-200"
+            }
+          >
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200/60 dark:border-[#01170f]">
               <Text
-                className={`text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-sm ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Notifications
               </Text>
@@ -211,7 +293,9 @@ export default function ProfileTab() {
 
             <View className="flex-row justify-between items-center p-4">
               <Text
-                className={`text-sm ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-sm ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Dark Mode
               </Text>
@@ -231,9 +315,17 @@ export default function ProfileTab() {
           isOpen={openAccordion === "help"}
           onPress={() => toggleAccordion("help")}
         >
-          <View className={`p-4 ${isDark ? "bg-slate-900/60" : "bg-white/60"}`}>
+          <View
+            className={`p-4 ${
+              isDark
+                ? "bg-[#0e0e0e] border-t border-[#01170f]"
+                : "bg-white/60 border-t border-gray-200"
+            }`}
+          >
             <Text
-              className={`text-xs ${isDark ? "text-gray-300" : "text-gray-600"}`}
+              className={`text-xs ${
+                isDark ? "text-gray-300" : "text-gray-600"
+              }`}
             >
               Need assistance? Reach out to support at support@unisuki.com.
             </Text>
@@ -243,12 +335,14 @@ export default function ProfileTab() {
         {/* 7. Logout */}
         <TouchableOpacity
           className={`flex-row items-center p-4 border-t ${
-            isDark ? "border-slate-800" : "border-gray-200/80"
+            isDark ? "border-[#01170f]" : "border-gray-200"
           }`}
           onPress={() => setShowLogoutModal(true)}
         >
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text className="flex-1 ml-3 font-semibold text-red-500">Logout</Text>
+          <Text className="flex-1 ml-3 font-semibold text-red-500">
+            Logout
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -256,7 +350,6 @@ export default function ProfileTab() {
       <LogoutModal
         visible={showLogoutModal}
         onCancel={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
       />
     </ScreenWrapper>
   );

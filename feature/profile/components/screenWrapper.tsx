@@ -33,13 +33,10 @@ export default function ScreenWrapper({
 
   return (
     <SafeAreaView
-      edges={["top", "left", "right"]}
+
       className={`flex-1`}
     >
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#0f172a" : "#ffffff"}
-      />
+
 
       {/* Header section (e.g., ProfileHeader or Custom TopBar) */}
       {headerComponent && <View className="px-4">{headerComponent}</View>}

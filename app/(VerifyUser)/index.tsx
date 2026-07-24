@@ -2,7 +2,7 @@ import { createAppNotification } from "@/feature/notifications/notifications";
 import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -81,12 +81,12 @@ export default function AdminVerifyUsersScreen() {
     return () => unsubscribe();
   }, []);
 
-  const handleReviewAction = async (status: "approved" | "rejected") => {
+const handleReviewAction = async (status: "approved" | "rejected") => {
     if (!selectedReq) return;
     setIsSubmitting(true);
 
     try {
-      // 1. Update/Create status in userVerifications collection using setDoc with merge
+      // 1. Update status in userVerifications collection using the document ID (e.g. ZYbTOeP48cSTYEZNVP40)
       const verificationRef = doc(db, "userVerifications", selectedReq.id);
       await setDoc(
         verificationRef,
@@ -97,20 +97,31 @@ export default function AdminVerifyUsersScreen() {
         { merge: true }
       );
 
-      // 2. Update/Create status in user collection using setDoc with merge
-      if (selectedReq.uid) {
-        const userRef = doc(db, "user", selectedReq.uid);
-        await setDoc(
-          userRef,
-          {
-            is_verified: status === "approved",
-          },
-          { merge: true }
-        );
+      // 2. Get the target user's actual UID from the verification document
+      const targetUid = selectedReq.uid;
+
+      if (targetUid) {
+        // Reference the user document directly using user/{targetUid}
+        const userRef = doc(db, "user", targetUid);
+
+        const updatePayload: Record<string, any> = {
+          is_verified: status === "approved",
+        };
+
+        if (status === "approved" && selectedReq.profileData) {
+          updatePayload.name = selectedReq.profileData.name || "";
+          updatePayload.username = selectedReq.profileData.username || "";
+          updatePayload.address = selectedReq.profileData.address || "";
+          updatePayload.age = selectedReq.profileData.age || "";
+          updatePayload.idNumber = selectedReq.profileData.idNumber || "";
+        }
+
+        // Write/merge profile data into user/{targetUid}
+        await setDoc(userRef, updatePayload, { merge: true });
 
         // 3. Send notification to user
         await createAppNotification({
-          recipientUid: selectedReq.uid,
+          recipientUid: targetUid,
           senderUid: auth.currentUser?.uid || "admin",
           title:
             status === "approved"
@@ -118,11 +129,13 @@ export default function AdminVerifyUsersScreen() {
               : "Identity Verification Rejected",
           body:
             status === "approved"
-              ? "Your account verification is complete. You now have full access!"
+              ? "Your account verification is complete. Your profile details have been updated!"
               : "Your identity document could not be verified. Please resubmit clear photos.",
           type: "verification",
           routePath: "/profile",
         });
+      } else {
+        console.warn("Verification request is missing a 'uid' field.");
       }
 
       setSelectedReq(null);
@@ -134,14 +147,20 @@ export default function AdminVerifyUsersScreen() {
     }
   };
 
+  const handleViewUserProfile = () => {
+    if (!selectedReq?.uid) return;
+    setSelectedReq(null);
+    router.push(`/(user)/${selectedReq.uid}` as any);
+  };
+
   return (
     <SafeAreaView className="flex-1 mt-[-38px]">
       {/* Header */}
       <View
         className={`flex-row items-center justify-between px-4 py-3.5 border-b ${
           isDark
-            ? "border-slate-800 bg-[#0e0e0e]/40"
-            : "border-gray-200/80 bg-white"
+            ? "border-green-800 bg-[#0e0e0e]/40"
+            : "border-green-200 bg-white"
         }`}
       >
         <TouchableOpacity onPress={() => router.back()} className="p-1">
@@ -199,8 +218,8 @@ export default function AdminVerifyUsersScreen() {
                 onPress={() => setSelectedReq(item)}
                 className={`mb-3 p-4 rounded-2xl border ${
                   isDark
-                    ? "bg-[#0e0e0e] border-slate-800"
-                    : "bg-white border-gray-200/80"
+                    ? "bg-[#0e0e0e] border-green-800"
+                    : "bg-white border-green-200"
                 }`}
               >
                 <View className="flex-row items-center justify-between">
@@ -272,12 +291,12 @@ export default function AdminVerifyUsersScreen() {
             <View
               className={`max-h-[90%] rounded-t-3xl p-5 border-t ${
                 isDark
-                  ? "bg-[#0e0e0e] border-slate-800"
+                  ? "bg-[#0e0e0e] border-green-800"
                   : "bg-[#f3f3f3] border-gray-200"
               }`}
             >
               {/* Modal Header */}
-              <View className="flex-row items-center justify-between pb-3 border-b border-gray-200/80 dark:border-slate-800">
+              <View className="flex-row items-center justify-between pb-3 border-b border-green-200 dark:border-green-800">
                 <Text
                   className={`text-lg font-bold ${
                     isDark ? "text-white" : "text-gray-900"
@@ -299,13 +318,29 @@ export default function AdminVerifyUsersScreen() {
                 <View
                   className={`p-4 rounded-xl mb-4 border ${
                     isDark
-                      ? "bg-[#0e0e0e]/40 border-slate-800"
-                      : "bg-white border-gray-200/80"
+                      ? "bg-[#0e0e0e]/40 border-green-800"
+                      : "bg-white border-green-200"
                   }`}
                 >
-                  <Text className="text-xs font-bold text-emerald-500 mb-2 uppercase">
-                    Profile Information
-                  </Text>
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-xs font-bold text-emerald-500 uppercase">
+                      Profile Information
+                    </Text>
+                    <TouchableOpacity
+                      onPress={handleViewUserProfile}
+                      className="flex-row items-center gap-1 bg-emerald-600/20 px-2.5 py-1 rounded-lg"
+                    >
+                      <Ionicons
+                        name="person-outline"
+                        size={14}
+                        color="#059669"
+                      />
+                      <Text className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        View Profile
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
                   <Text
                     className={`text-sm ${
                       isDark ? "text-white" : "text-gray-900"
@@ -378,7 +413,7 @@ export default function AdminVerifyUsersScreen() {
                         }
                         className={`relative overflow-hidden rounded-2xl border ${
                           isDark
-                            ? "border-slate-800 bg-white/5"
+                            ? "border-green-800 bg-white/5"
                             : "border-gray-200 bg-black/5"
                         }`}
                       >
@@ -413,7 +448,7 @@ export default function AdminVerifyUsersScreen() {
                         }
                         className={`relative overflow-hidden rounded-2xl border ${
                           isDark
-                            ? "border-slate-800 bg-white/5"
+                            ? "border-green-800 bg-white/5"
                             : "border-gray-200 bg-black/5"
                         }`}
                       >
@@ -448,7 +483,7 @@ export default function AdminVerifyUsersScreen() {
                         }
                         className={`relative overflow-hidden rounded-2xl border ${
                           isDark
-                            ? "border-slate-800 bg-white/5"
+                            ? "border-green-800 bg-white/5"
                             : "border-gray-200 bg-black/5"
                         }`}
                       >
@@ -470,7 +505,7 @@ export default function AdminVerifyUsersScreen() {
               </ScrollView>
 
               {/* Action Buttons */}
-              <View className="flex-row gap-3 pt-2 border-t border-gray-200/80 dark:border-slate-800">
+              <View className="flex-row gap-3 pt-2 border-t border-green-200 dark:border-green-800">
                 <TouchableOpacity
                   disabled={isSubmitting}
                   onPress={() => handleReviewAction("rejected")}

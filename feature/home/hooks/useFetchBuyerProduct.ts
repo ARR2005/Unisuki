@@ -15,6 +15,7 @@ export type Product = {
   sellerName?: string;
   userId: string; // The exact parent user document ID
   isReserved?: boolean; // Flag indicating if item is reserved
+  status?: string; // Product status: "active", "sold", etc.
   tags?: {
     title?: string;
     type?: string;
@@ -47,6 +48,7 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
             ...(data as Omit<Product, "id">),
             userId: sellerUidFromPath,
             isReserved: Boolean(data.isReserved),
+            status: data.status || "active",
             title: data.tags?.title || data.title || "Untitled Product",
             imageUrl: data.imageUrl || data.imageUri || "https://picsum.photos/id/26/400/300",
           };
@@ -54,7 +56,8 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
 
         const filteredProducts = fetchedProducts.filter((product) => {
           const isMyPost = product.userId === currentUserId;
-          const isAvailable = !product.isReserved;
+          // Item must NOT be reserved AND status must NOT be "sold"
+          const isAvailable = !product.isReserved && product.status !== "sold";
 
           return excludeOwnProducts
             ? !isMyPost && isAvailable
