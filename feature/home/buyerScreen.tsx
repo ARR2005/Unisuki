@@ -5,9 +5,18 @@ import SearchBar from "@/feature/home/components/searchBar";
 import { useFetchBuyerProduct } from "@/feature/home/hooks/useFetchBuyerProduct";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native";
 
 export default function BuyerScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const { products, loading, error } = useFetchBuyerProduct();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -30,7 +39,11 @@ export default function BuyerScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDark ? "bg-[#0e0e0e]" : "bg-white"
+        }`}
+      >
         <ActivityIndicator size="large" color="#059669" />
       </View>
     );
@@ -38,14 +51,22 @@ export default function BuyerScreen() {
 
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text className="text-red-500 font-medium">{error}</Text>
+      <View
+        className={`flex-1 justify-center items-center px-4 ${
+          isDark ? "bg-[#0e0e0e]" : "bg-white"
+        }`}
+      >
+        <Text className="text-red-500 font-medium text-center">{error}</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white border-1 rounded-t-2xl">
+    <View
+      className={`flex-1 rounded-t-2xl ${
+        isDark ? "bg-white/0" : "bg-white"
+      }`}
+    >
       <FlatList
         key="grid-2"
         data={filteredProducts}
@@ -55,7 +76,11 @@ export default function BuyerScreen() {
         columnWrapperStyle={{ justifyContent: "space-between", gap: 12 }}
         ListHeaderComponent={
           <View className="mb-4">
-            <Text className="ml-2 mb-2 mt-4 font-semibold text-gray-800">
+            <Text
+              className={`ml-2 mb-2 mt-4 font-semibold ${
+                isDark ? "text-gray-100" : "text-gray-800"
+              }`}
+            >
               What product do you want?
             </Text>
 
@@ -63,11 +88,10 @@ export default function BuyerScreen() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               onClear={() => setSearchQuery("")}
-              isDark={false}
+              isDark={isDark}
             />
 
             {/* FULL-WIDTH CAROUSEL WRAPPER */}
-            {/* -mx-4 offsets the parent FlatList padding (16px = 4 tailwind units) */}
             <View className="-mx-4 my-3">
               <Carousel />
             </View>
@@ -80,7 +104,13 @@ export default function BuyerScreen() {
         }
         ListEmptyComponent={
           <View className="py-12 items-center">
-            <Text className="text-gray-500 text-base">No products found</Text>
+            <Text
+              className={`text-base ${
+                isDark ? "text-white" : "text-gray-500"
+              }`}
+            >
+              No products found
+            </Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -98,7 +128,7 @@ export default function BuyerScreen() {
                   "Navigating to:",
                   cleanProductId,
                   "Seller:",
-                  cleanSellerId,
+                  cleanSellerId
                 );
                 router.push({
                   pathname: "/(product)/productDetail/[id]",

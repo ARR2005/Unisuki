@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Text, View } from "react-native";
+import { ActivityIndicator, Image, Text, View, useColorScheme } from "react-native";
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
@@ -13,6 +13,9 @@ import auth from "@/service/firebaseConfigs";
 import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
 
 export default function SplashScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const { getSavedLogin, clearLogin } = useAuthPersistence();
   const [statusMessage, setStatusMessage] = useState(
     "Checking your saved session..."
@@ -75,7 +78,11 @@ export default function SplashScreen() {
   }, [clearLogin, getSavedLogin]);
 
   return (
-    <View className="bg-primary dark:bg-darkPrimary flex-1 items-center justify-center p-4">
+    <View
+      className={`flex-1 items-center justify-center p-4 ${
+        isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"
+      }`}
+    >
       <Image
         source={require("@/assets/images/react-logo.png")}
         className="w-80 h-80"
@@ -83,10 +90,14 @@ export default function SplashScreen() {
       />
       <ActivityIndicator
         size="large"
-        color="orange"
-        className="mt-8 scale-[2]"
+        color="#059669"
+        className="mt-8 scale-[1.5]"
       />
-      <Text className="mt-8 text-sm text-gray-500 dark:text-gray-400 text-center font-medium">
+      <Text
+        className={`mt-8 text-sm font-medium text-center ${
+          isDark ? "text-gray-400" : "text-gray-600"
+        }`}
+      >
         {statusMessage}
       </Text>
     </View>

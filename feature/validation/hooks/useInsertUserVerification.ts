@@ -1,13 +1,14 @@
+import { createAppNotification } from "@/feature/notifications/notifications";
+import auth from "@/service/firebaseConfigs";
 import { getApp } from "firebase/app";
 import {
-  addDoc,
-  collection,
-  getFirestore,
-  serverTimestamp,
+    addDoc,
+    collection,
+    getDocs,
+    getFirestore,
+    serverTimestamp,
 } from "firebase/firestore";
 import { useState } from "react";
-
-import auth from "@/service/firebaseConfigs";
 
 export interface VerificationProfileData {
   name: string;
@@ -33,8 +34,13 @@ async function uploadToCloudinary(uri: string): Promise<string> {
 
   // Guard check for missing environment variables
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
-    console.error("❌ Cloudinary Config Missing:", { CLOUD_NAME, UPLOAD_PRESET });
-    throw new Error("Missing Cloudinary configuration in environment variables.");
+    console.error("❌ Cloudinary Config Missing:", {
+      CLOUD_NAME,
+      UPLOAD_PRESET,
+    });
+    throw new Error(
+      "Missing Cloudinary configuration in environment variables.",
+    );
   }
 
   const formData = new FormData();
@@ -54,11 +60,13 @@ async function uploadToCloudinary(uri: string): Promise<string> {
 
   if (!response.ok) {
     console.error("❌ Cloudinary Upload Error:", data);
-    throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
+    throw new Error(
+      data.error?.message || "Failed to upload image to Cloudinary.",
+    );
   }
 
   console.log("✅ Cloudinary Upload Success URL:", data.secure_url);
-  return data.secure_url; 
+  return data.secure_url;
 }
 
 export function useInsertUserVerification() {
@@ -79,7 +87,7 @@ export function useInsertUserVerification() {
     try {
       if (!auth.currentUser) {
         throw new Error("You must be logged in to submit verification.");
-        }  
+      }
 
       if (!images.front || !images.back || !images.selfie) {
         console.warn("⚠️ Missing one or more images before upload.");
@@ -119,6 +127,25 @@ export function useInsertUserVerification() {
       });
 
       console.log("🎉 Document written to Firestore with ID:", docRef.id);
+
+      const adminsSnapshot = await getDocs(collection(db, "user"));
+      const adminRecipientUids = adminsSnapshot.docs
+        .filter((userDoc) => {
+          const role = userDoc.data().Role || userDoc.data().role || "";
+          return String(role).toLowerCase() === "admin";
+        })
+        .map((userDoc) => userDoc.id);
+
+      if (adminRecipientUids.length > 0) {
+        await createAppNotification({
+          recipientUids: adminRecipientUids,
+          senderUid: auth.currentUser?.uid || "",
+          title: "New verification request",
+          body: `${profileData.name || "A new user"} has completed account setup and is waiting for verification.`,
+          type: "verification",
+          routePath: "/verifyUsers",
+        });
+      }
     } catch (err: any) {
       const message = err?.message ?? "Unable to submit verification.";
       console.error("❌ Verification Submission Failed:", message);

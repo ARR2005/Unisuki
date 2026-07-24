@@ -87,13 +87,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 32,   // rounded-2xl
         backgroundColor: 'transparent',
         // --- Custom Offset Shadow ---
-        // iOS Shadow Settings
-        shadowColor: 'green', // Dark shadow color
-        shadowOffset: { width: 0, height: 10 }, // Noticeable downward offset
-        shadowOpacity: 0.32,
-        shadowRadius: 32,
-        
-        elevation: 120, 
+        // iOS Shadow Sett
     },
     touchable: {
         padding: 24,           // p-5

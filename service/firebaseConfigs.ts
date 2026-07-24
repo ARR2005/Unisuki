@@ -1,11 +1,6 @@
 // Import the functions you need from the SDKs you need
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApp, getApps, initializeApp } from "firebase/app";
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-} from "firebase/auth";
+import { getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -21,9 +16,7 @@ const firebaseConfig = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = (() => {
   try {
-    return initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
-    });
+    return initializeAuth(app);
   } catch {
     // Fast Refresh may have already initialized Auth for this Firebase app.
     return getAuth(app);
@@ -34,6 +27,6 @@ const auth = (() => {
 const db = getFirestore(app);
 
 // Export named exports for modular usage
-export { auth, db };  
+export { auth, db };
 
 export default auth;

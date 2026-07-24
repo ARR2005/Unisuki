@@ -1,3 +1,4 @@
+import { createAppNotification } from "@/feature/notifications/notifications";
 import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
 import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
@@ -82,7 +83,8 @@ export default function ProductDetailsScreen() {
     try {
       const safeSellerId = String(sellerId).trim();
       const safeProductId = String(id).trim();
-      const buyerName = currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+      const buyerName =
+        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
       const resolvedSellerName = sellerName || "Seller";
 
       // 1. Mark item as reserved
@@ -138,13 +140,29 @@ export default function ProductDetailsScreen() {
         systemMessage: false,
       });
 
-      // 4. Navigate to Chat & pass otherUserName parameter
+      await createAppNotification({
+        recipientUid: safeSellerId,
+        title: "New reservation request",
+        body: `${buyerName} reserved this item. Open the chat to review it.`,
+        type: "reservation",
+        chatId,
+        productId: safeProductId,
+        sellerId: safeSellerId,
+        buyerId: currentUser.uid,
+        routePath: "/(chat)/[chatId]",
+        routeParams: {
+          chatId,
+          isReservation: "true",
+          otherUserName: buyerName,
+        },
+      });
+
       router.push({
         pathname: "/(chat)/[chatId]",
         params: {
           chatId,
           isReservation: "true",
-          otherUserName: resolvedSellerName, // Passes seller name directly to chat header!
+          otherUserName: resolvedSellerName,
         },
       });
     } catch (err) {
@@ -173,7 +191,8 @@ export default function ProductDetailsScreen() {
     try {
       const safeSellerId = String(sellerId).trim();
       const safeProductId = String(id).trim();
-      const buyerName = currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+      const buyerName =
+        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
       const resolvedSellerName = sellerName || "Seller";
 
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_direct`;

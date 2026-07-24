@@ -43,6 +43,7 @@ const MainLayout = () => {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)/index" options={{ headerShown: false }} />
           <Stack.Screen name="(dashboard)" options={{ headerShown: false }} />
+          <Stack.Screen name="(VerifyUser)/index" options={{ headerShown: false }} />
           <Stack.Screen
             name="(post)/postForm"
             options={{ headerShown: false }}
@@ -65,6 +66,10 @@ const MainLayout = () => {
           />
           <Stack.Screen
             name="(scanner)/summary"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="(notification)/index"
             options={{ headerShown: false }}
           />
         </Stack>

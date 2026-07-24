@@ -1,3 +1,4 @@
+import { createAppNotification } from "@/feature/notifications/notifications";
 import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -197,6 +198,28 @@ export default function SummaryScreen() {
         await updateDoc(productRef, {
           status: "sold",
           isReserved: false,
+        });
+      }
+
+      if (targetSellerId && targetChatId) {
+        await createAppNotification({
+          recipientUid: targetSellerId,
+          title: "Transaction success",
+          body: "The handover was completed successfully. Open the chat to view the transaction details.",
+          type: "transaction",
+          chatId: targetChatId,
+          productId: targetProductId,
+          sellerId: targetSellerId,
+          buyerId: currentUser?.uid || "",
+          routePath: "/(chat)/[chatId]",
+          routeParams: {
+            chatId: targetChatId,
+            isReservation: "true",
+            otherUserName:
+              currentUser?.displayName ||
+              currentUser?.email?.split("@")[0] ||
+              "Buyer",
+          },
         });
       }
 

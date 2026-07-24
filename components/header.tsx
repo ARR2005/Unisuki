@@ -1,12 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
-import auth from "@/service/firebaseConfigs";
+import { useRouter } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Text, TouchableOpacity, View, useColorScheme } from "react-native";
 
 export default function Header() {
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [username, setUsername] = useState<string>("");
   const [loadingUser, setLoadingUser] = useState<boolean>(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -17,7 +32,7 @@ export default function Header() {
           return;
         }
 
-        const db = getFirestore();
+        // 1. First check userVerifications for profileData.username
         const q = query(
           collection(db, "userVerifications"),
           where("uid", "==", currentUser.uid)
@@ -26,10 +41,29 @@ export default function Header() {
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
-          setUsername(userData?.profileData?.username || "User");
-        } else {
-          setUsername("User");
+          if (userData?.profileData?.username) {
+            setUsername(userData.profileData.username);
+            setLoadingUser(false);
+            return;
+          }
         }
+
+        // 2. Fallback check user collection document (user/{uid})
+        const userDocRef = doc(db, "user", currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const uData = userDoc.data();
+          const fetchedName =
+            uData?.username || uData?.name || uData?.fullName;
+          if (fetchedName) {
+            setUsername(fetchedName);
+            setLoadingUser(false);
+            return;
+          }
+        }
+
+        // 3. Auth Display Name Fallback
+        setUsername(currentUser.displayName || currentUser.email?.split("@")[0] || "User");
       } catch (error) {
         console.error("Error fetching username:", error);
         setUsername("User");
@@ -41,19 +75,54 @@ export default function Header() {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    let unsubscribeNotifications: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      unsubscribeNotifications?.();
+      unsubscribeNotifications = undefined;
+
+      if (!user) {
+        setUnreadCount(0);
+        return;
+      }
+
+      const notificationsRef = collection(db, "notifications");
+      const q = query(notificationsRef, where("recipientUid", "==", user.uid));
+
+      unsubscribeNotifications = onSnapshot(q, (snapshot) => {
+        const unread = snapshot.docs.filter(
+          (docSnap) => !docSnap.data().read
+        ).length;
+        setUnreadCount(unread);
+      });
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeNotifications?.();
+    };
+  }, []);
+
   const handleNotificationPress = () => {
-    // Add default notification action or leave empty
+    router.push("/(notification)");
   };
 
   return (
-    <View className="w-ful px-5 pt-6 border-gray-100 pb-4">
+    <View className="w-full px-5 pt-6 pb-4">
       <View className="flex-row justify-between items-start">
         <View>
-          <Text className="text-green-800 text-lg font-medium">Hello welcome back!</Text>
+          <Text className={`text-lg font-medium ${isDark ? "text-emerald-400" : "text-emerald-800"}`}>
+            Hello Welcome back!
+          </Text>
           {loadingUser ? (
-            <ActivityIndicator size="small" color="#4F46E5" className="self-start mt-1" />
+            <ActivityIndicator
+              size="small"
+              color="#059669"
+              className="self-start mt-2 ml-6"
+            />
           ) : (
-            <Text className="text-black text-4xl ml-6 font-bold">
+            <Text className={`text-4xl ml-6 font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
               {username || "Guest"}
             </Text>
           )}
@@ -61,10 +130,25 @@ export default function Header() {
 
         <TouchableOpacity
           onPress={handleNotificationPress}
-          className="p-3 bg-gray-50 rounded-full border border-gray-100"
+          className={`p-3 rounded-full border ${
+            isDark
+              ? "bg-[#0e0e0e]/40 border-slate-800"
+              : "bg-white border-gray-200"
+          }`}
           activeOpacity={0.7}
         >
-          <Ionicons name="notifications-outline" size={22} color="#1F2937" />
+          <Ionicons
+            name="notifications-outline"
+            size={22}
+            color={isDark ? "#ffffff" : "#1F2937"}
+          />
+          {unreadCount > 0 && (
+            <View className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-rose-500 items-center justify-center px-1">
+              <Text className="text-[10px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
     </View>

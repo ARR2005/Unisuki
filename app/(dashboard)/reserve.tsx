@@ -24,7 +24,7 @@ export default function ReservationsScreen() {
   const isDark = colorScheme === "dark";
 
   const [activeMode, setActiveMode] = useState<Mode>("buyer");
-  
+
   // Restore saved active tab mode on load
   useEffect(() => {
     const loadActiveMode = async () => {
@@ -134,15 +134,19 @@ export default function ReservationsScreen() {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-slate-900" : "bg-gray-50"}`}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: "Reservations",
-          headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" },
-          headerTintColor: isDark ? "#ffffff" : "#0f172a",
-        }}
-      />
+    <View className={`flex-1`}>
+      <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Screen Header */}
+      <View className="pt-12 pb-4 px-4">
+        <Text
+          className={`text-4xl font-extrabold tracking-wide text-center ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
+          Reservations
+        </Text>
+      </View>
 
       {/* Mode Switcher matching Home design */}
       <View style={styles.switcherContainer}>
@@ -189,7 +193,7 @@ export default function ReservationsScreen() {
               </Text>
               <Text
                 className={`mt-1 text-sm text-center px-8 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
+                  isDark ? "text-gray-300" : "text-gray-300"
                 }`}
               >
                 {activeMode === "buyer"
@@ -207,8 +211,8 @@ export default function ReservationsScreen() {
                 onPress={() => handleOpenChat(item)}
                 className={`mb-4 p-4 rounded-2xl border ${
                   isDark
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-gray-100"
+                    ? "bg-gray-500/20 border-gray-200/10"
+                    : "bg-white border-gray-200/80"
                 }`}
                 style={{
                   shadowColor: "#000",
@@ -227,7 +231,11 @@ export default function ReservationsScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View className="w-20 h-20 rounded-xl bg-gray-200 dark:bg-slate-700 items-center justify-center">
+                    <View
+                      className={`w-20 h-20 rounded-xl items-center justify-center ${
+                        isDark ? "bg-[#0e0e0e]/20" : "bg-gray-200"
+                      }`}
+                    >
                       <Ionicons
                         name="image-outline"
                         size={24}
@@ -289,21 +297,22 @@ export default function ReservationsScreen() {
 
 const styles = StyleSheet.create({
   switcherContainer: {
-    paddingVertical: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
   },
   modeSwitcher: {
     alignSelf: "center",
     flexDirection: "row",
-    width: 280,
+    width: 300,
     padding: 4,
     borderWidth: 1,
     borderColor: "#e5e7eb",
     borderRadius: 999,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#ffffff",
   },
   modeSwitcherDark: {
-    borderColor: "#334155",
-    backgroundColor: "#1e293b",
+    borderColor: "#1f2937",
+    backgroundColor: "rgba(14, 14, 14, 0.2)",
   },
   modeButton: {
     flex: 1,
@@ -312,7 +321,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   activeModeButton: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#f3f3f3",
     elevation: 1,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
@@ -320,7 +329,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   activeModeButtonDark: {
-    backgroundColor: "#0f172a",
+    backgroundColor: "#065f46", // Tailwind green-800 / emerald-900 equivalent
     elevation: 1,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
@@ -333,7 +342,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   modeLabelDark: {
-    color: "#94a3b8",
+    color: "#9ca3af",
   },
   activeModeLabel: {
     color: "#000000",

@@ -1,7 +1,18 @@
-import { useState, useEffect } from "react";
-import { collection, onSnapshot, query, deleteDoc, updateDoc, doc, Unsubscribe } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { createAppNotification } from "@/feature/notifications/notifications";
 import { auth, db } from "@/service/firebaseConfigs";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  Unsubscribe,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 export type Product = {
   id: string;
@@ -36,7 +47,7 @@ export function useFetchSellerProducts() {
 
       setLoading(true);
       const userItemsRef = collection(db, "user", user.uid, "itemPosted");
-      
+
       unsubscribeFirestore = onSnapshot(
         query(userItemsRef),
         (snapshot) => {
@@ -44,14 +55,14 @@ export function useFetchSellerProducts() {
             snapshot.docs.map((docSnap) => ({
               id: docSnap.id,
               ...(docSnap.data() as Omit<Product, "id">),
-            }))
+            })),
           );
           setLoading(false);
         },
         (error) => {
           console.error("Firestore read error:", error);
           setLoading(false);
-        }
+        },
       );
     });
 
@@ -69,7 +80,11 @@ export function useUpdateProduct() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const updateProduct = async (product: Product, newTitle: string, newPrice: string) => {
+  const updateProduct = async (
+    product: Product,
+    newTitle: string,
+    newPrice: string,
+  ) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return false;
 
@@ -82,7 +97,13 @@ export function useUpdateProduct() {
     setUpdateError(null);
 
     try {
-      const itemRef = doc(db, "user", currentUser.uid, "itemPosted", product.id);
+      const itemRef = doc(
+        db,
+        "user",
+        currentUser.uid,
+        "itemPosted",
+        product.id,
+      );
       const parsedPrice = parseFloat(newPrice) || 0;
 
       if (product.tags) {
@@ -122,7 +143,50 @@ export function useDeleteProduct() {
     setDeleteError(null);
 
     try {
-      await deleteDoc(doc(db, "user", currentUser.uid, "itemPosted", productId));
+      const itemRef = doc(db, "user", currentUser.uid, "itemPosted", productId);
+      const itemSnap = await getDocs(
+        query(collection(db, "user", currentUser.uid, "itemPosted")),
+      );
+      const itemExists = itemSnap.docs.some((snap) => snap.id === productId);
+
+      if (!itemExists) {
+        return true;
+      }
+
+      await deleteDoc(itemRef);
+
+      const reservationChatsQuery = query(
+        collection(db, "chats"),
+        where("productId", "==", productId),
+        where("sellerId", "==", currentUser.uid),
+        where("type", "==", "reservation"),
+      );
+
+      const reservationChats = await getDocs(reservationChatsQuery);
+
+      for (const chatSnap of reservationChats.docs) {
+        const chatData = chatSnap.data();
+        const buyerId = chatData.buyerId;
+
+        if (buyerId) {
+          await createAppNotification({
+            recipientUid: buyerId,
+            title: "Listing deleted",
+            body: "The seller removed this item, so it is no longer available.",
+            type: "reservation",
+            chatId: chatSnap.id,
+            productId,
+            sellerId: currentUser.uid,
+            buyerId,
+            routePath: "/(chat)/[chatId]",
+            routeParams: {
+              chatId: chatSnap.id,
+              isReservation: "true",
+            },
+          });
+        }
+      }
+
       return true;
     } catch (error) {
       console.error("Error deleting item:", error);

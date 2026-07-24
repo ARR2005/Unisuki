@@ -1,402 +1,362 @@
-import { useProfileEdit } from "@/hooks/useProfileEdit";
+import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  FlatList,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ProfileEditPage() {
+type NotificationItem = {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  read: boolean;
+  chatId?: string;
+  routePath?: string;
+  routeParams?: Record<string, string>;
+  createdAt?: any;
+};
+
+type FilterCategory =
+  | "all"
+  | "unread"
+  | "transaction"
+  | "reservation"
+  | "Post"
+  | "System"
+  | "New User"
+  | "Sold";
+
+const FILTERS: { id: FilterCategory; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "unread", label: "Unread" },
+  { id: "transaction", label: "Transactions" },
+  { id: "reservation", label: "Reservations" },
+  { id: "Post", label: "Posts" },
+  { id: "System", label: "System" },
+  { id: "New User", label: "New User" },
+  { id: "Sold", label: "Sold" },
+];
+
+export default function NotificationsPage() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const {
-    profile,
-    formData,
-    errors,
-    isLoading,
-    isSaving,
-    showLogoutConfirm,
-    setShowLogoutConfirm,
-    updateField,
-    handleSaveProfile,
-    handleLogout,
-    auth,
-  } = useProfileEdit();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<FilterCategory>("all");
 
-  const currentUserEmail = auth.currentUser?.email;
+  useEffect(() => {
+    let unsubscribeNotifications: (() => void) | undefined;
 
-  if (isLoading) {
-    return (
-      <SafeAreaView
-        edges={["top"]}
-        className={`flex-1 items-center justify-center ${
-          isDark ? "bg-slate-900" : "bg-white"
-        }`}
-      >
-        <ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
-        <Text className={`mt-4 ${isDark ? "text-white" : "text-gray-900"}`}>
-          Loading profile...
-        </Text>
-      </SafeAreaView>
-    );
-  }
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      unsubscribeNotifications?.();
+      unsubscribeNotifications = undefined;
+
+      if (!user) {
+        setNotifications([]);
+        setLoading(false);
+        return;
+      }
+
+      const q = query(
+        collection(db, "notifications"),
+        where("recipientUid", "==", user.uid),
+      );
+
+      unsubscribeNotifications = onSnapshot(
+        q,
+        (snapshot) => {
+          const items = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              title: data.title || "Notification",
+              body: data.body || "",
+              type: data.type || "general",
+              read: Boolean(data.read),
+              chatId: data.chatId || "",
+              routePath: data.routePath || "",
+              routeParams: data.routeParams || {},
+              createdAt: data.createdAt,
+            } as NotificationItem;
+          });
+
+          // Unread items first
+          items.sort((a, b) => Number(a.read) - Number(b.read));
+
+          setNotifications(items);
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error listening to notifications:", error);
+          setLoading(false);
+        },
+      );
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeNotifications?.();
+    };
+  }, []);
+
+  // Filtered Notifications derived state
+  const filteredNotifications = useMemo(() => {
+    return notifications.filter((item) => {
+      if (selectedFilter === "all") return true;
+      if (selectedFilter === "unread") return !item.read;
+      if (selectedFilter === "Post") return item.type === "Post";
+      if (selectedFilter === "New User") return item.type === "New User";
+      if (selectedFilter === "Sold") return item.type === "Sold";
+      return item.type === selectedFilter;
+    });
+  }, [notifications, selectedFilter]);
+
+  const handleOpenNotification = async (item: NotificationItem) => {
+    if (!auth.currentUser) return;
+
+    if (item.id && !item.read) {
+      try {
+        const notifRef = doc(db, "notifications", item.id);
+        await updateDoc(notifRef, { read: true });
+      } catch (err) {
+        console.error("Error marking notification as read:", err);
+      }
+    }
+
+    if (item.routePath) {
+      const params = item.routeParams || {};
+      router.push({ pathname: item.routePath as any, params });
+      return;
+    }
+
+    if (item.chatId) {
+      router.push({
+        pathname: "/(chat)/[chatId]",
+        params: { chatId: item.chatId, isReservation: "true" },
+      });
+    }
+  };
+
+  // Helper for type-based color themes with /40 opacity
+  const getTypeTheme = (type: string, read: boolean) => {
+    switch (type) {
+      case "transaction":
+        return {
+          bg: isDark ? "bg-emerald-900/40" : "bg-emerald-100/40",
+          border: isDark ? "border-emerald-700/50" : "border-emerald-300/60",
+          iconBg: isDark ? "bg-emerald-600" : "bg-emerald-500",
+          iconName: "checkmark-circle-outline",
+          iconColor: "#ffffff",
+        };
+
+      case "reservation":
+        return {
+          bg: isDark ? "bg-blue-900/40" : "bg-blue-100/40",
+          border: isDark ? "border-blue-700/50" : "border-blue-300/60",
+          iconBg: isDark ? "bg-blue-600" : "bg-blue-500",
+          iconName: "cart-outline",
+          iconColor: "#ffffff",
+        };
+
+      case "promo":
+      case "coupon":
+        return {
+          bg: isDark ? "bg-purple-900/40" : "bg-purple-100/40",
+          border: isDark ? "border-purple-700/50" : "border-purple-300/60",
+          iconBg: isDark ? "bg-purple-600" : "bg-purple-500",
+          iconName: "pricetag-outline",
+          iconColor: "#ffffff",
+        };
+
+      case "security":
+      case "verification":
+        return {
+          bg: isDark ? "bg-amber-900/40" : "bg-amber-100/40",
+          border: isDark ? "border-amber-700/50" : "border-amber-300/60",
+          iconBg: isDark ? "bg-amber-600" : "bg-amber-500",
+          iconName: "shield-checkmark-outline",
+          iconColor: "#ffffff",
+        };
+
+      default:
+        return {
+          bg: isDark ? "bg-[#0e0e0e]/40" : "bg-gray-100/40",
+          border: isDark ? "border-slate-800" : "border-gray-200",
+          iconBg: isDark ? "bg-slate-700" : "bg-gray-200",
+          iconName: "notifications-outline",
+          iconColor: isDark ? "#ffffff" : "#374151",
+        };
+    }
+  };
 
   return (
     <SafeAreaView
       edges={["top"]}
-      className={`flex-1 ${
-        isDark ? "bg-gradient-professional-dark" : "bg-gradient-professional"
-      }`}
+      className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+      {/* Header */}
+      <View
+        className={`flex-row items-center justify-between px-4 pb-4 border-b ${
+          isDark ? "border-slate-800" : "border-gray-200"
+        }`}
       >
-        {/* Header */}
-        <View
-          className={`flex-row items-center justify-between px-4 py-4 border-b ${
-            isDark ? "border-green-400/20" : "border-green-300/30"
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons
+            name="chevron-back"
+            size={24}
+            color={isDark ? "#fff" : "#111827"}
+          />
+        </TouchableOpacity>
+        <Text
+          className={`text-xl font-bold ${
+            isDark ? "text-white" : "text-gray-900"
           }`}
         >
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={isDark ? "#22c55e" : "#16a34a"}
-            />
-          </TouchableOpacity>
-          <Text
-            className={`text-xl font-bold ${isDark ? "text-white" : "text-gray-900"}`}
-          >
-            My Profile
-          </Text>
-          <View className="w-6" />
-        </View>
+          Notifications
+        </Text>
+        <View className="w-6" />
+      </View>
 
+      {/* Filter Options Pills */}
+      <View className="py-3">
         <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 32 }}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-4 flex-row gap-2"
         >
-          {/* User Info Section */}
-          <View
-            className={`mx-4 mt-6 p-5 rounded-2xl border ${
-              isDark
-                ? "bg-green-500/30 border-green-400/50"
-                : "bg-green-100/60 border-green-300/70"
-            } backdrop-blur-md`}
-          >
-            <View className="flex-row items-center mb-4">
-              <View className="w-16 h-16 rounded-full bg-emerald-500 items-center justify-center">
-                <Ionicons name="person" size={32} color="#fff" />
-              </View>
-              <View className="flex-1 ml-4">
-                <Text
-                  className={`text-lg font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  {formData.name || formData.username || "User"}
-                </Text>
-                <Text
-                  className={`text-sm ${isDark ? "text-green-200/80" : "text-green-800/80"}`}
-                >
-                  {currentUserEmail}
-                </Text>
-              </View>
-            </View>
-
-            {profile?.avatar && (
-              <Text
-                className={`text-xs ${isDark ? "text-green-200/60" : "text-green-700/60"}`}
-              >
-                Member since {new Date(profile.createdAt).toLocaleDateString()}
-              </Text>
-            )}
-          </View>
-
-          {/* Edit Form */}
-          <View className="mx-4 mt-8">
-            <Text
-              className={`text-lg font-bold mb-6 ${isDark ? "text-white" : "text-gray-900"}`}
-            >
-              Edit Profile
-            </Text>
-
-            {/* Full Name */}
-            <View className="mb-5">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  Full Name
-                </Text>
-                <Text
-                  className={`text-xs ${formData.name.length >= 50 ? "text-red-500 font-semibold" : isDark ? "text-gray-400" : "text-gray-600"}`}
-                >
-                  {formData.name.length}/49
-                </Text>
-              </View>
-              <View
-                className={`border rounded-lg px-4 py-3 flex-row items-center ${
-                  errors.name
-                    ? "border-red-500 bg-red-50"
+          {FILTERS.map((filter) => {
+            const isActive = selectedFilter === filter.id;
+            return (
+              <TouchableOpacity
+                key={filter.id}
+                onPress={() => setSelectedFilter(filter.id)}
+                className={`px-4 py-2 rounded-full border ${
+                  isActive
+                    ? isDark
+                      ? "bg-emerald-900 border-emerald-500"
+                      : "bg-emerald-600 border-emerald-600"
                     : isDark
-                      ? "border-gray-600"
-                      : "border-gray-300"
+                      ? "bg-[#0e0e0e]/40 border-white/10"
+                      : "bg-black/10 border-black/10"
                 }`}
               >
-                <Ionicons
-                  name="person-circle-outline"
-                  size={20}
-                  color={errors.name ? "#ef4444" : isDark ? "#999" : "#666"}
-                  style={{ marginRight: 8 }}
-                />
-                <TextInput
-                  placeholder="Your full name"
-                  value={formData.name}
-                  onChangeText={(value) => updateField("name", value)}
-                  className={`flex-1 text-base ${isDark ? "text-white" : "text-gray-900"}`}
-                  editable={!isSaving}
-                  placeholderTextColor="#999"
-                  maxLength={49}
-                />
-              </View>
-              {errors.name && (
-                <View className="flex-row items-center mt-2 px-2">
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
-                  <Text className="text-red-500 text-xs ml-1">
-                    {errors.name}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Username */}
-            <View className="mb-5">
-              <View className="flex-row justify-between items-center mb-2">
                 <Text
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                  className={`text-xs font-semibold ${
+                    isActive
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-300"
+                        : "text-gray-700"
+                  }`}
                 >
-                  Username
+                  {filter.label}
                 </Text>
-                <Text
-                  className={`text-xs ${formData.username.length >= 15 ? "text-red-500 font-semibold" : isDark ? "text-gray-400" : "text-gray-600"}`}
-                >
-                  {formData.username.length}/14
-                </Text>
-              </View>
-              <View
-                className={`border rounded-lg px-4 py-3 flex-row items-center ${
-                  errors.username
-                    ? "border-red-500 bg-red-50"
-                    : isDark
-                      ? "border-gray-600"
-                      : "border-gray-300"
-                }`}
-              >
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={errors.username ? "#ef4444" : isDark ? "#999" : "#666"}
-                  style={{ marginRight: 8 }}
-                />
-                <TextInput
-                  placeholder="Your username"
-                  value={formData.username}
-                  onChangeText={(value) => updateField("username", value)}
-                  className={`flex-1 text-base ${isDark ? "text-white" : "text-gray-900"}`}
-                  editable={!isSaving}
-                  placeholderTextColor="#999"
-                  maxLength={14}
-                />
-              </View>
-              {errors.username && (
-                <View className="flex-row items-center mt-2 px-2">
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
-                  <Text className="text-red-500 text-xs ml-1">
-                    {errors.username}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* ID Number */}
-            <View className="mb-5">
-              <Text
-                className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
-              >
-                ID Number
-              </Text>
-              <View
-                className={`border rounded-lg px-4 py-3 flex-row items-center ${
-                  errors.idNumber
-                    ? "border-red-500 bg-red-50"
-                    : isDark
-                      ? "border-gray-600"
-                      : "border-gray-300"
-                }`}
-              >
-                <Ionicons
-                  name="card-outline"
-                  size={20}
-                  color={errors.idNumber ? "#ef4444" : isDark ? "#999" : "#666"}
-                  style={{ marginRight: 8 }}
-                />
-                <TextInput
-                  placeholder="Student/Employee ID"
-                  value={formData.idNumber}
-                  onChangeText={(value) => updateField("idNumber", value)}
-                  className={`flex-1 text-base ${isDark ? "text-white" : "text-gray-900"}`}
-                  editable={!isSaving}
-                  placeholderTextColor="#999"
-                />
-              </View>
-              {errors.idNumber && (
-                <View className="flex-row items-center mt-2 px-2">
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
-                  <Text className="text-red-500 text-xs ml-1">
-                    {errors.idNumber}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Age */}
-            <View className="mb-5">
-              <Text
-                className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}
-              >
-                Age{" "}
-                <Text className="text-xs text-gray-500">(must be 14-79)</Text>
-              </Text>
-              <View
-                className={`border rounded-lg px-4 py-3 flex-row items-center ${
-                  errors.age
-                    ? "border-red-500 bg-red-50"
-                    : isDark
-                      ? "border-gray-600"
-                      : "border-gray-300"
-                }`}
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={errors.age ? "#ef4444" : isDark ? "#999" : "#666"}
-                  style={{ marginRight: 8 }}
-                />
-                <TextInput
-                  placeholder="Your age"
-                  value={formData.age}
-                  onChangeText={(value) => updateField("age", value)}
-                  className={`flex-1 text-base ${isDark ? "text-white" : "text-gray-900"}`}
-                  keyboardType="number-pad"
-                  editable={!isSaving}
-                  placeholderTextColor="#999"
-                />
-              </View>
-              {errors.age && (
-                <View className="flex-row items-center mt-2 px-2">
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
-                  <Text className="text-red-500 text-xs ml-1">
-                    {errors.age}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Address */}
-            <View className="mb-8">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text
-                  className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
-                >
-                  Address
-                </Text>
-                <Text
-                  className={`text-xs ${formData.address.length >= 50 ? "text-red-500 font-semibold" : isDark ? "text-gray-400" : "text-gray-600"}`}
-                >
-                  {formData.address.length}/49
-                </Text>
-              </View>
-              <View
-                className={`border rounded-lg px-4 py-3 flex-row items-start ${
-                  errors.address
-                    ? "border-red-500 bg-red-50"
-                    : isDark
-                      ? "border-gray-600"
-                      : "border-gray-300"
-                }`}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={20}
-                  color={errors.address ? "#ef4444" : isDark ? "#999" : "#666"}
-                  style={{ marginRight: 8, marginTop: 8 }}
-                />
-                <TextInput
-                  placeholder="Your address"
-                  value={formData.address}
-                  onChangeText={(value) => updateField("address", value)}
-                  className={`flex-1 text-base ${isDark ? "text-white" : "text-gray-900"}`}
-                  multiline
-                  numberOfLines={3}
-                  editable={!isSaving}
-                  placeholderTextColor="#999"
-                  textAlignVertical="top"
-                  maxLength={49}
-                />
-              </View>
-              {errors.address && (
-                <View className="flex-row items-center mt-2 px-2">
-                  <Ionicons name="alert-circle" size={14} color="#ef4444" />
-                  <Text className="text-red-500 text-xs ml-1">
-                    {errors.address}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Save Button */}
-            <TouchableOpacity
-              onPress={async () => {
-                await handleSaveProfile();
-                router.back();
-              }}
-              disabled={isSaving}
-              className={`p-4 rounded-lg items-center mb-4 ${
-                isSaving ? "bg-gray-400" : "bg-green-600"
-              }`}
-            >
-              {isSaving ? (
-                <ActivityIndicator color="#fff" size="large" />
-              ) : (
-                <View className="flex-row items-center">
-                  <Ionicons name="checkmark-done" size={20} color="#fff" />
-                  <Text className="text-white font-bold text-base ml-2">
-                    Save Changes
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* Info Text */}
-            <Text
-              className={`text-xs text-center mt-6 ${isDark ? "text-gray-500" : "text-gray-600"}`}
-            >
-              This information helps other students trust and find you on
-              Unisuk.
-            </Text>
-          </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
+
+      {/* Content */}
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#059669" />
+        </View>
+      ) : filteredNotifications.length === 0 ? (
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons
+            name="notifications-off-outline"
+            size={48}
+            color={isDark ? "#64748b" : "#9ca3af"}
+          />
+          <Text
+            className={`mt-4 text-center text-lg font-semibold ${
+              isDark ? "text-white" : "text-gray-800"
+            }`}
+          >
+            {selectedFilter === "all"
+              ? "No notifications yet"
+              : `No ${selectedFilter} notifications`}
+          </Text>
+          <Text
+            className={`mt-2 text-center text-sm ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            Reservation and transaction updates will appear here.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredNotifications}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+          renderItem={({ item }) => {
+            const theme = getTypeTheme(item.type, item.read);
+
+            return (
+              <TouchableOpacity
+                onPress={() => handleOpenNotification(item)}
+                className={`mb-3 rounded-2xl border p-4 ${theme.bg} ${
+                  theme.border
+                } ${item.read ? "opacity-60" : "opacity-100"}`}
+              >
+                <View className="flex-row items-start gap-3">
+                  <View className={`mt-0.5 rounded-full p-2.5 ${theme.iconBg}`}>
+                    <Ionicons
+                      name={theme.iconName as any}
+                      size={18}
+                      color={theme.iconColor}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <View className="flex-row items-center justify-between">
+                      <Text
+                        className={`font-semibold text-base ${
+                          isDark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {item.title}
+                      </Text>
+
+                      {!item.read && (
+                        <View className="w-2 h-2 rounded-full bg-emerald-500" />
+                      )}
+                    </View>
+
+                    <Text
+                      className={`mt-1 text-sm ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      {item.body}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
