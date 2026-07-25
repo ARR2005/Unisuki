@@ -1,232 +1,150 @@
+import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
   Text,
   TouchableOpacity,
   View,
+  useColorScheme,
 } from "react-native";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import CreateProfileForm from "@/feature/validation/createProfileForm";
-import {
-  useInsertUserVerification,
-  type VerificationProfileData,
-} from "@/feature/validation/hooks/useInsertUserVerification";
-import SubmitPictureScreen from "@/feature/validation/submitPictureScreen";
-import TermAndCondition from "@/feature/validation/termAndCondition";
-import { router } from "expo-router";
+export default function Checker() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-export default function Validation() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [profileData, setProfileData] = useState<VerificationProfileData>({
-    name: "",
-    username: "",
-    idNumber: "",
-    age: "",
-    address: "",
-  });
-  const totalSteps = 2;
-  const createProfileFormRef = useRef<{ validateForm: () => boolean }>(null);
-  const submitPictureRef = useRef<{
-    validateImages: () => boolean;
-    getImages: () => Record<string, string | null>;
-  }>(null);
-
-  const next = () => setCurrentStep((s) => Math.min(s + 1, totalSteps));
-  const prev = () => setCurrentStep((s) => Math.max(s - 1, 1));
-
-  const {
-    insertUserVerification,
-    isSubmitting,
-    error: submissionError,
-  } = useInsertUserVerification();
-
-  const handleProceedToDashboard = () => {
-    const isValid = submitPictureRef.current?.validateImages() ?? false;
-    if (!isValid) return;
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmitVerification = async () => {
-    if (!isChecked) return;
-    const images = submitPictureRef.current?.getImages();
-    if (!images) return;
-
-    try {
-      await insertUserVerification(profileData, {
-        front: images.front,
-        back: images.back,
-        selfie: images.selfie,
-      });
-      setIsDialogOpen(false);
-      router.replace("/(dashboard)/home");
-    } catch {
-      // error is handled by the hook
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep === 1) {
-      const isValid = createProfileFormRef.current?.validateForm() ?? false;
-      if (!isValid) return;
-      next();
+  useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setLoading(false);
       return;
     }
 
-    if (currentStep === totalSteps) {
-      handleProceedToDashboard();
+    const userRef = doc(db, "user", currentUser.uid);
+
+    const unsubscribe = onSnapshot(
+      userRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const verified =
+            data.is_verified === true || data.is_verified === "true";
+
+          if (verified) {
+            // Replace navigation stack to Home/Dashboard once verified
+            router.replace("/(dashboard)/home");
+            return;
+          }
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error checking verification status:", error);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await signOut(auth);
+      router.replace("/(auth)/login"); // Adjust route if your login page path differs
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <CreateProfileForm
-            ref={createProfileFormRef}
-            onDataChange={setProfileData}
-          />
-        );
-      case 2:
-        return <SubmitPictureScreen ref={submitPictureRef} />;
-      default:
-        return <CreateProfileForm ref={createProfileFormRef} />;
-    }
-  };
+  if (loading) {
+    return (
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"
+        }`}
+      >
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView className="flex-1">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+    <View className="flex-1 justify-center items-center px-6">
+      <Image
+        source={require("@/assets/images/icon/dashboardLogo.png")}
+        className="w-20 h-20 items-center justify-center"
+        resizeMode="contain"
+      />
+
+      {/* Main Title */}
+      <Text
+        className={`text-2xl font-extrabold text-center tracking-tight ${
+          isDark ? "text-white" : "text-gray-900"
+        }`}
       >
-        <View className="flex-1 items-center justify-between pt-4 bg-white">
-          {/* Progress Indicator Header */}
-          <View className="w-full flex-row items-center justify-between px-6 py-2">
-            {[1, 2].map((step) => (
-              <View
-                key={step}
-                className={`h-2.5 flex-1 mx-1 rounded-full ${
-                  currentStep >= step
-                    ? "bg-green-600"
-                    : "bg-gray-200 dark:bg-slate-700"
-                }`}
-              />
-            ))}
-          </View>
+        Account Verification Pending
+      </Text>
 
-          <View className="w-full flex-1">{renderStep()}</View>
+      {/* Verification Time Description */}
+      <Text
+        className={`mt-3 text-center text-base font-medium leading-6 ${
+          isDark ? "text-gray-400" : "text-gray-600"
+        }`}
+      >
+        Please wait for the admin to verify your account.
+      </Text>
 
-          <View className="pt-2 pb-10 w-full border-t border-slate-200 dark:border-green-800 flex-row items-center justify-between px-6">
-            <TouchableOpacity
-              onPress={prev}
-              disabled={currentStep === 1}
-              className={`rounded-lg border border-gray-300 dark:border-slate-700 px-4 py-2.5 ${
-                currentStep === 1
-                  ? "opacity-0"
-                  : "active:bg-gray-100 dark:active:bg-slate-800"
-              }`}
-            >
-              <Text className="font-semibold text-gray-800 dark:text-slate-200">
-                Previous Step
-              </Text>
-            </TouchableOpacity>
+      {/* Working Days Highlight Card */}
+      <View
+        className={`mt-6 w-full p-4 rounded-2xl border items-center flex-row justify-center gap-2 ${
+          isDark ? "bg-[#0e0e0e] border-[#01170f]" : "bg-white border-gray-200"
+        }`}
+      >
+        <Ionicons
+          name="calendar-outline"
+          size={20}
+          color={isDark ? "#10b981" : "#059669"}
+        />
+        <Text
+          className={`text-sm font-semibold ${
+            isDark ? "text-gray-200" : "text-gray-800"
+          }`}
+        >
+          Estimated processing time:{" "}
+          <Text className="text-emerald-500 dark:text-emerald-400 font-bold">
+            1–3 working days
+          </Text>
+        </Text>
+      </View>
 
-            <TouchableOpacity
-              onPress={handleNext}
-              className="rounded-lg bg-green-600 px-5  py-2.5"
-              activeOpacity={0.8}
-            >
-              <Text className="font-semibold text-white">
-                {currentStep === totalSteps
-                  ? "Proceed to Dashboard"
-                  : "Next Step"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="w-full max-w-xl">
-              <DialogHeader>
-                <DialogTitle>Terms and Conditions</DialogTitle>
-                <DialogDescription>
-                  By completing this form you have agreed with the Terms and
-                  Conditions. Review the full details below, then confirm to
-                  submit your verification. All details entered here will be
-                  checked by the admin to ensure all information is correct.
-                </DialogDescription>
-              </DialogHeader>
-              <View className="mt-2 flex-row items-center gap-3">
-                {/* Checkbox Button */}
-                <TouchableOpacity
-                  onPress={() => setIsChecked((current) => !current)}
-                  className="h-6 w-6 items-center justify-center rounded-md border border-gray-300 bg-white"
-                  activeOpacity={0.7}
-                >
-                  {isChecked && (
-                    <Ionicons name="checkmark" size={18} color="#16a34a" />
-                  )}
-                </TouchableOpacity>
-
-                {/* Inline Text Wrapper */}
-                <Text className="flex-1 text-sm text-gray-700">
-                  By checking this box, I accept the{" "}
-                  <Text
-                    onPress={() => setShowTermsModal(true)}
-                    className="font-semibold text-green-600 underline"
-                  >
-                    Terms and Conditions
-                  </Text>
-                </Text>
-              </View>
-              {submissionError ? (
-                <Text className="mt-4 text-sm text-red-600">
-                  {submissionError}
-                </Text>
-              ) : null}
-
-              <TouchableOpacity
-                onPress={handleSubmitVerification}
-                disabled={isSubmitting || !isChecked}
-                className={`mt-4 w-full rounded-xl bg-green-600 px-4 py-3 text-center ${
-                  isSubmitting || !isChecked ? "opacity-70" : ""
-                }`}
-              >
-                <Text className="text-center font-semibold text-white">
-                  {isSubmitting ? "Submitting..." : "Confirm and Submit"}
-                </Text>
-              </TouchableOpacity>
-
-              <Modal
-                visible={showTermsModal}
-                animationType="slide"
-                onRequestClose={() => setShowTermsModal(false)}
-              >
-                <TermAndCondition
-                  onClose={() => setShowTermsModal(false)}
-                  onAgree={() => {
-                    setIsChecked(true);
-                    setShowTermsModal(false);
-                  }}
-                />
-              </Modal>
-            </DialogContent>
-          </Dialog>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      {/* Logout / Back to Login Button */}
+      <TouchableOpacity
+        onPress={handleLogout}
+        disabled={isLoggingOut}
+        activeOpacity={0.8}
+        className="mt-8 w-full py-3.5 rounded-2xl bg-emerald-600 dark:bg-[#065f46] flex-row items-center justify-center gap-2"
+      >
+        {isLoggingOut ? (
+          <ActivityIndicator size="small" color="#ffffff" />
+        ) : (
+          <>
+            <Ionicons name="log-out-outline" size={20} color="#ffffff" />
+            <Text className="text-white font-bold text-base">
+              Back to Login
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 }

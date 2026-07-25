@@ -72,6 +72,10 @@ const MainLayout = () => {
             name="(notification)/index"
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="(validation)/checker"
+            options={{ headerShown: false }}
+          />
         </Stack>
         <PortalHost />
       </View>

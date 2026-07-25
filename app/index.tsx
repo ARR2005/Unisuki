@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Text, View, useColorScheme } from "react-native";
+import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
+import auth from "@/service/firebaseConfigs";
 import { router } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
@@ -9,8 +9,14 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import auth from "@/service/firebaseConfigs";
-import { useAuthPersistence } from "@/feature/Auth/hooks/useAuthPersistence";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native";
 
 export default function SplashScreen() {
   const colorScheme = useColorScheme();
@@ -18,7 +24,7 @@ export default function SplashScreen() {
 
   const { getSavedLogin, clearLogin } = useAuthPersistence();
   const [statusMessage, setStatusMessage] = useState(
-    "Checking your saved session..."
+    "Checking your saved session...",
   );
 
   useEffect(() => {
@@ -40,13 +46,13 @@ export default function SplashScreen() {
         const credential = await signInWithEmailAndPassword(
           auth,
           savedLogin.email,
-          savedLogin.password
+          savedLogin.password,
         );
 
         const db = getFirestore();
         const verificationQuery = query(
           collection(db, "userVerifications"),
-          where("uid", "==", credential.user.uid)
+          where("uid", "==", credential.user.uid),
         );
         const verificationSnapshot = await getDocs(verificationQuery);
 
@@ -58,7 +64,7 @@ export default function SplashScreen() {
         if (!isMounted) return;
 
         if (hasCompleteSetup) {
-          router.replace("/(dashboard)/home");
+          router.replace("/(validation)/checker");
         } else {
           router.replace("/(validation)/welcomeScreen");
         }

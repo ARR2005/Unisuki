@@ -96,7 +96,7 @@ export default function SignInForm() {
       });
 
       if (hasCompleteSetup) {
-        router.replace("/(dashboard)/home");
+        router.replace("/(validation)/checker");
       } else {
         router.replace("/(validation)/welcomeScreen");
       }
