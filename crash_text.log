@@ -1,0 +1,49 @@
+﻿--------- beginning of (HKS)4FD768F2F5777C673B88330CE54883B03246743966F13D4A4B2DABC898CD611EB9A3BFDD7D9CDCF5CC4D1A03768B4E1DBF4F31AF0F7559DF62F79F00E114BD681739CF37842DA681EA516E2DAC92F58C5FB4FCDC0F05033DBCAAEFD5A552924C5A41C863E330DE36FFE5DC6A92D0DB4B34DE6A9E57CD7B688E3A81F3C1FF226E983C26A5FB832A8046B0595FB5B4A3C62D1A6C3979A11DFC03F49B330D299AEF89C6F2F0E7758E3DA970A6E0BFA9082654572EB02351CA6D3A0DB9A0A09B615CAFBB43B571633B638D2A27D890C6DD905A6123B41E5B9DDFD3E3CD13D978046BCD945A5825EC8784B938C8FD74BE85AEB42A4DD9144DB95D1D53C67613F0DBAC(HKE)
+--------- beginning of crash
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: FATAL EXCEPTION: mqt_v_native
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: Process: com.asiu.Unisuki, PID: 8853
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: com.facebook.react.common.JavascriptException: FirebaseError: Firebase: Error (auth/invalid-api-key)., stack:
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: createErrorInternal@1:1283112
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: _assert@1:1283345
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: anonymous@1:1307708
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: getOrInitializeService@1:1248256
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: initialize@1:1247731
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: initializeAuth@1:1293833
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: getAuth@1:1275580
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: anonymous@1:1234999
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: loadModuleImplementation@1:59204
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: guardedLoadModule@1:58727
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: metroRequire@1:58237
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: anonymous@1:4577454
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: loadModuleImplementation@1:59204
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: guardedLoadModule@1:58683
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: metroRequire@1:58237
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: get@1:1226730
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: metroContext@1:1226138
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: loadRoute@1:2310065
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: getQualifiedRouteComponent@1:2141176
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: getComponent@1:2142185
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: SceneView@1:2102210
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: renderWithHooks@1:247378
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: updateFunctionComponent@1:266200
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: beginWork@1:274086
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: performUnitOfWork@1:292760
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: workLoopSync@1:291768
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: renderRootSync@1:291600
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: performWorkOnRoot@1:289024
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: performWorkOnRootViaSchedulerTask@1:242836
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(ExceptionsManagerModule.kt:52)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.jni.NativeRunnable.run(Native Method)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at android.os.Handler.handleCallback(Handler.java:1039)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:117)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.kt:21)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at android.os.Looper.loopOnce(Looper.java:258)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:353)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(MessageQueueThreadImpl.kt:175)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4(Unknown Source:0)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+07-26 18:21:30.153  8853 14207 E AndroidRuntime: 	at java.lang.Thread.run(Thread.java:1563)
+--------- beginning of main
+07-26 18:21:30.213  8853 14206 E ReactNativeJS:   componentStack: '\n    at SceneView (address at index.android.bundle:1:2101667)\n    at NavigationProvider (address at index.android.bundle:1:2059376)\n    at RNSScreenContentWrapper (<anonymous>)\n    at ScreenContentWrapper (<anonymous>)\n    at DebugContainer (<anonymous>)\n    at RNSScreen (<anonymous>)\n    at Animated(Anonymous) (address at index.android.bundle:1:578543)\n    at Suspender (address at index.android.bundle:1:2214310)\n    at Suspense (<anonymous>)\n    at Freeze (address at index.android.bundle:1:2214371)\n    at DelayedFreeze (address at index.android.bundle:1:2213952)\n    at InnerScreen (address at index.android.bundle:1:2211653)\n    at anonymous (address at index.android.bundle:1:2213350)\n    at ScreenStackItem (address at index.android.bundle:1:2223578)\n    at NavigationProvider (address at index.android.bundle:1:2059376)\n    at SceneView (address at index.android.bundle:1:2247188)\n    at RNSScreenStack (<anonymous>)\n    at anonymous (address at index.android.bundle:1:2222650)\n    at ScreenStack (address at index.android.bundle:1:2221836)\n    at RCTView (<anonymous>)\n    at View (address at index.android.bundle:1:488947)\n    at FrameSizeProvider (address at index.android.bundle:1:2183953)\n    at SafeAreaProviderCompat (address at index.android.bundle:1:2196291)\n    at NativeStackView (address at index.android.bundle:1:2245744)\n    at PreventRemoveProvider (address at index.android.bundle:1:2086921)\n    at NavigationStateListenerProvider (address at index.android.bundle:1:2108897)\n    at NavigationContent (address at index.android.bundle:1:2098844)\n    at anonymous (address at index.android.bundle:1:2098747)\n    at NativeStackNavigator (address at index.android.bundle:1:2241901)\n    at anonymous (address at index.android.bundle:1:2133284)\n    at anonymous (address at index.android.bundle:1:2013927)\n    at RCTView (<anonymous>)\n    at View (address at index.android.bundle:1:488947)\n    at CssInterop.View (address at index.android.bundle:1:493572)\n    at ThemeProvider (address at index.android.bundle:1:2046255)\n    at MainLayout (address at index.android.bundle:1:4522041)\n    at RNCSafeAreaView (<anonymous>)\n    at anonymous (address at index.android.bundle:1:1128393)\n    at anonymous (address at index.android.bundle:1:493610)\n    at ImageProvider (address at index.android.bundle:1:2774535)\n    at RootLayout (address at index.android.bundle:1:4521856)\n    at Suspense (<anonymous>)\n    at Route (address at index.android.bundle:1:2134364)\n    at BaseRoute (address at index.android.bundle:1:2141281)\n    at StaticContainer (address at index.android.bundle:1:2103349)\n    at EnsureSingleNavigator (address at index.android.bundle:1:2043995)\n    at SceneView (address at index.android.bundle:1:2101667)\n    at NavigationProvider (address at index.android.bundle:1:2059376)\n    at PreventRemoveProvider (address at index.android.bundle:1:2086921)\n    at NavigationStateListenerProvider (address at index.android.bundle:1:2108897)\n    at NavigationContent (address at index.android.bundle:1:2098844)\n    at anonymous (address at index.android.bundle:1:2098747)\n    at Content (address at index.android.bundle:1:2345130)\n    at SafeAreaEnv (address at index.android.bundle:1:1124382)\n    at RNCSafeAreaProvider (<anonymous>)\n    at SafeAreaProvider (address at index.android.bundle:1:1126295)\n    at SafeAreaProviderShim (address at index.android.bundle:1:1124780)\n    at LinkPreviewContextProvider (address at index.android.bundle:1:2255793)\n    at anonymous (address at index.android.bundle:1:2344022)\n    at ThemeProvider (address at index.android.bundle:1:2046255)\n    at EnsureSingleNavigator (address at index.android.bundle:1:2043995)\n    at BaseNavigationContainer (address at index.android.bundle:1:2020948)\n    at NavigationContainerInner (address at index.android.bundle:1:2346993)\n    at ContextNavigator (address at index.android.bundle:1:2344251)\n    at ExpoRoot (address at index.android.bu
+07-26 18:21:30.213  8853 14206 E ReactNativeJS:   isComponentError: true }

@@ -19,12 +19,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.asiu.Unisuki"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "@/assets/images/favicon.png"
+      "favicon": "./assets/images/icon/dashboardLogo.png"
     },
     "plugins": [
       "expo-router",
@@ -45,8 +46,21 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
+    "cli": {
+      "appVersionSource": "app.json"
+    },
     "extra": {
+      "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCbMJqiZrow34V2Nuk1s5OseLAACL3aBfs",
+      "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "unisukiserver.firebaseapp.com",
+      "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "unisukiserver",
+      "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "unisukiserver.firebasestorage.app",
+      "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "449993955233",
+      "EXPO_PUBLIC_FIREBASE_APP_ID": "1:449993955233:web:cd2f9ebc564163975e1de0",
+      "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8131BBHX62",
       "router": {},
+      "EXPO_PUBLIC_FIREBASE_DATABASE_URL": "https://unisukiserver-default-rtdb.asia-southeast1.firebasedatabase.app",
+      "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "unisukiAsset",
+      "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "unisuk_posts",
       "eas": {
         "projectId": "268c3702-9679-46c1-894b-9f1d3384ac81"
       }

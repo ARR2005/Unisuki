@@ -1,5 +1,6 @@
 import { createAppNotification } from "@/feature/notifications/notifications";
 import auth from "@/service/firebaseConfigs";
+import Constants from "expo-constants";
 import { getApp } from "firebase/app";
 import {
     addDoc,
@@ -24,8 +25,16 @@ export type VerificationImages = {
   selfie: string | null;
 };
 
-const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const expoExtra =
+  (Constants as any)?.expoConfig?.extra ??
+  (Constants as any)?.manifest?.extra ??
+  {};
+const CLOUD_NAME =
+  process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME ??
+  expoExtra.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET =
+  process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET ??
+  expoExtra.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 // Helper function to upload a single local URI to Cloudinary

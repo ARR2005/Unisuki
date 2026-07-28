@@ -1,4 +1,5 @@
 import { useImage } from "@/context/storeImage";
+import { uploadImageAndGetDownloadURL } from "@/service/ImageUploader";
 import auth from "@/service/firebaseConfigs";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -183,9 +184,26 @@ export const usePostForm = () => {
         throw new Error("Please sign in before publishing your item.");
       }
 
+      // 1. Upload main image to Firebase Storage
+      const mainImageName = capturedImage.uri.split("/").pop() || `image-${Date.now()}`;
+      const mainImagePath = `products/${userId}/${Date.now()}-${mainImageName}`;
+      const mainImageURL = await uploadImageAndGetDownloadURL(
+        capturedImage.uri,
+        mainImagePath
+      );
+
+      // 2. Upload additional images to Firebase Storage
+      const additionalImageURLs = await Promise.all(
+        (formData.additionalImages || []).map(async (uri) => {
+          const imageName = uri.split("/").pop() || `image-${Date.now()}`;
+          const imagePath = `products/${userId}/${Date.now()}-${imageName}`;
+          return await uploadImageAndGetDownloadURL(uri, imagePath);
+        })
+      );
+
       const db = getFirestore();
 
-      // 1. Query userVerifications by uid field for currently logged-in user
+      // 3. Query userVerifications by uid field for currently logged-in user
       let sellerName = "Seller";
       try {
         const q = query(
@@ -208,19 +226,19 @@ export const usePostForm = () => {
         console.warn("Could not fetch seller profile name:", profileError);
       }
 
-      // 2. Prepare payload with resolved sellerName attached
+      // 4. Prepare payload with the public image URLs
       const productData = {
         title: formData.title.trim(),
         price: parseFloat(formData.price),
         description: formData.description.trim(),
-        imageUri: capturedImage.uri,
-        imageUrl: capturedImage.uri,
+        imageUri: mainImageURL,
+        imageUrl: mainImageURL,
         tags: formData.tags,
         type: formData.type || "miscellaneous",
         quantity: formData.quantity || 1,
         category: formData.category || "Miscellaneous",
-        additionalImages: formData.additionalImages || [],
-        sellerName, // Embedded username saved directly to product doc
+        additionalImages: additionalImageURLs,
+        sellerName,
         ...(formData.category === "Clothes"
           ? {
               sizes: formData.sizes?.trim() || "",
@@ -241,7 +259,7 @@ export const usePostForm = () => {
         status: "active",
       };
 
-      // 3. Save to user subcollection
+      // 5. Save to user subcollection
       await addDoc(collection(db, "user", userId, "itemPosted"), productData);
 
       setIsUploadingImage(false);
