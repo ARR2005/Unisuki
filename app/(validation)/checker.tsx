@@ -58,7 +58,7 @@ export default function Checker() {
     try {
       setIsLoggingOut(true);
       await signOut(auth);
-      router.replace("/(auth)/login"); // Adjust route if your login page path differs
+      router.replace("/(auth)/index"); // Adjust route if your login page path differs
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
