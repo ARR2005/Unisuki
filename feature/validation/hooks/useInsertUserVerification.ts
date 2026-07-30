@@ -1,6 +1,5 @@
 import { createAppNotification } from "@/feature/notifications/notifications";
 import auth from "@/service/firebaseConfigs";
-import Constants from "expo-constants";
 import { getApp } from "firebase/app";
 import {
     addDoc,
@@ -10,6 +9,8 @@ import {
     serverTimestamp,
 } from "firebase/firestore";
 import { useState } from "react";
+import * as FileSystem from 'expo-file-system';
+import { Platform } from "react-native";
 
 export interface VerificationProfileData {
   name: string;
@@ -25,21 +26,30 @@ export type VerificationImages = {
   selfie: string | null;
 };
 
-const expoExtra =
-  (Constants as any)?.expoConfig?.extra ??
-  (Constants as any)?.manifest?.extra ??
-  {};
-const CLOUD_NAME =
-  process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME ??
-  expoExtra.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET =
-  process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET ??
-  expoExtra.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 // Helper function to upload a single local URI to Cloudinary
 async function uploadToCloudinary(uri: string): Promise<string> {
-  console.log("📁 Uploading image to Cloudinary:", uri);
+  console.log("📁 Uploading image to Cloudinary from original URI:", uri);
+
+  let uploadUri = uri;
+  // On Android, if the URI is a content URI, copy it to a temporary file
+  // to ensure it can be uploaded correctly.
+  if (Platform.OS === 'android' && uri.startsWith('content://')) {
+    try {
+      const tempDir = FileSystem.cacheDirectory + 'cloudinary-uploads/';
+      await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
+      const tempFilePath = tempDir + uri.split('/').pop();
+      await FileSystem.copyAsync({ from: uri, to: tempFilePath });
+      uploadUri = tempFilePath;
+      console.log("📄 Copied content URI to temporary file:", uploadUri);
+    } catch (e) {
+      console.error("Failed to copy content URI to temporary file", e);
+      throw e; // re-throw the error to be caught by the outer try-catch
+    }
+  }
 
   // Guard check for missing environment variables
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
@@ -53,29 +63,61 @@ async function uploadToCloudinary(uri: string): Promise<string> {
   }
 
   const formData = new FormData();
-  formData.append("file", {
-    uri,
-    type: "image/jpeg",
-    name: "upload.jpg",
-  } as any);
+  
+  const file: { uri: string, type: string, name: string } = {
+    uri: uploadUri,
+    type: 'image/jpeg',
+    name: 'upload.jpg',
+  };
+
+  const fileExtension = uploadUri.split('.').pop()?.toLowerCase();
+  if (fileExtension === 'png') {
+    file.type = 'image/png';
+  } else if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+    file.type = 'image/jpeg';
+  }
+  
+  const fileName = uploadUri.split('/').pop();
+  if (fileName) {
+    file.name = fileName;
+  }
+  
+  console.log('📄 Uploading file with details:', file);
+
+  formData.append("file", file as any);
   formData.append("upload_preset", UPLOAD_PRESET);
 
-  const response = await fetch(CLOUDINARY_URL, {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const response = await fetch(CLOUDINARY_URL, {
+      method: "POST",
+      body: formData,
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    console.error("❌ Cloudinary Upload Error:", data);
-    throw new Error(
-      data.error?.message || "Failed to upload image to Cloudinary.",
-    );
+    if (!response.ok) {
+      console.error("❌ Cloudinary Upload Error:", { 
+        status: response.status,
+        statusText: response.statusText,
+        error: data.error 
+      });
+      throw new Error(
+        data.error?.message || `Failed to upload image to Cloudinary. Status: ${response.status}`,
+      );
+    }
+
+    console.log("✅ Cloudinary Upload Success URL:", data.secure_url);
+    return data.secure_url;
+  } catch (error) {
+    console.error("🚨 Fetch request to Cloudinary failed:", error);
+    throw error;
+  } finally {
+    // Clean up the temporary file if it was created
+    if (uploadUri !== uri) {
+      await FileSystem.deleteAsync(uploadUri, { idempotent: true });
+      console.log("🗑️ Deleted temporary file:", uploadUri);
+    }
   }
-
-  console.log("✅ Cloudinary Upload Success URL:", data.secure_url);
-  return data.secure_url;
 }
 
 export function useInsertUserVerification() {
@@ -157,7 +199,7 @@ export function useInsertUserVerification() {
       }
     } catch (err: any) {
       const message = err?.message ?? "Unable to submit verification.";
-      console.error("❌ Verification Submission Failed:", message);
+      console.error("Verification Submission Failed:", message);
       setError(message);
       throw new Error(message);
     } finally {

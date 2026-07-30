@@ -48,7 +48,7 @@ export default function Checker() {
       (error) => {
         console.error("Error checking verification status:", error);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -58,7 +58,7 @@ export default function Checker() {
     try {
       setIsLoggingOut(true);
       await signOut(auth);
-      router.replace("/(auth)/index"); // Adjust route if your login page path differs
+      router.replace("/(auth)"); // Adjust route if your login page path differs
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
@@ -109,9 +109,7 @@ export default function Checker() {
       {/* Working Days Highlight Card */}
       <View
         className={`mt-6 w-full p-4 rounded-2xl border items-center flex-row justify-center gap-2 ${
-          isDark
-            ? "bg-[#0e0e0e] border-[#01170f]"
-            : "bg-white border-gray-200"
+          isDark ? "bg-[#0e0e0e] border-[#01170f]" : "bg-white border-gray-200"
         }`}
       >
         <Ionicons
