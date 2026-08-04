@@ -155,7 +155,7 @@ const SubmitPictureScreen = forwardRef<SubmitPictureScreenHandle>((_, ref) => {
         <View className="gap-2 bg-white p-4 rounded-2xl border border-slate-400">
           {/* Header: Title + Dynamic Badge */}
           <View className="flex-row items-center justify-between w-full">
-            <Text className="text-base font-bold text-black">ID Back</Text>
+            <Text className="text-base font-bold text-black">Goverment ID</Text>
 
             <View
               className={`px-3 py-1 rounded-full border border-gray-200 ${

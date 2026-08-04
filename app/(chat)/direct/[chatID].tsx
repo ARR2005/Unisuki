@@ -253,7 +253,7 @@ export default function DirectChatScreen() {
               <Ionicons name="send" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
-          <View className="h-10" />
+          <View className="h-10 w-full mt-3" />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
