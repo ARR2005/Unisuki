@@ -1,4 +1,5 @@
 import { useImage } from "@/context/storeImage";
+import uploadToCloudinary from "@/service/cloudinaryUploader";
 import auth from "@/service/firebaseConfigs";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -35,8 +36,13 @@ export interface PostData {
 }
 
 export const usePostForm = () => {
-  const { capturedImage, setIsUploadingImage, setUploadError, clearImage } =
-    useImage();
+  const {
+    capturedImage,
+    setCapturedImage,
+    setIsUploadingImage,
+    setUploadError,
+    clearImage,
+  } = useImage();
 
   const [formData, setFormData] = useState<PostData>({
     title: "",
@@ -154,6 +160,39 @@ export const usePostForm = () => {
       }
     }
 
+    // Additional validations
+    if (category === "Clothes") {
+      const sizes = (formData.sizes || "").trim();
+      if (sizes) {
+        const allowed = ["XS", "S", "M", "L", "XL", "XXL"];
+        const tokens = sizes.split(/[,\s]+/).map((t) => t.toUpperCase());
+        const invalid = tokens.filter((t) => t && !allowed.includes(t));
+        if (invalid.length > 0) {
+          return `Invalid sizes: ${invalid.join(", ")}. Allowed: ${allowed.join(" ")}`;
+        }
+      }
+    }
+
+    if (category === "Shoes") {
+      const shoe = (formData.shoeSize || "").trim();
+      if (shoe) {
+        const num = parseFloat(shoe);
+        if (isNaN(num) || num <= 0 || num > 30) {
+          return "Please enter a valid shoe size (numeric)";
+        }
+      }
+    }
+
+    if (category === "Stationery") {
+      const amt = (formData.amount || "").trim();
+      if (amt) {
+        const n = parseInt(amt, 10);
+        if (isNaN(n) || n <= 0) {
+          return "Please enter a valid amount (positive integer)";
+        }
+      }
+    }
+
     return null;
   };
 
@@ -190,7 +229,7 @@ export const usePostForm = () => {
       try {
         const q = query(
           collection(db, "userVerifications"),
-          where("uid", "==", userId)
+          where("uid", "==", userId),
         );
 
         const querySnapshot = await getDocs(q);
@@ -208,18 +247,53 @@ export const usePostForm = () => {
         console.warn("Could not fetch seller profile name:", profileError);
       }
 
-      // 2. Prepare payload with resolved sellerName attached
+      // 2. Upload images to Cloudinary (main image, optional additional images)
+      let mainImageUrl = capturedImage.uri;
+      try {
+        mainImageUrl = await uploadToCloudinary(capturedImage.uri);
+        // persist uploaded url in image context
+        try {
+          setCapturedImage({ ...capturedImage, uploadedUrl: mainImageUrl });
+        } catch (e) {
+          // ignore if context update fails
+        }
+      } catch (err: any) {
+        console.error("Main image upload failed:", err);
+        const message = err?.message || "Image upload failed";
+        setUploadError(message);
+        setIsUploadingImage(false);
+        return false;
+      }
+
+      const uploadedAdditional: string[] = [];
+      for (const img of formData.additionalImages || []) {
+        try {
+          const url = await uploadToCloudinary(img);
+          uploadedAdditional.push(url);
+        } catch (e) {
+          console.warn(
+            "Additional image upload failed, keeping local URI",
+            img,
+            e,
+          );
+          uploadedAdditional.push(img);
+        }
+      }
+
+      // 3. Prepare payload with resolved sellerName attached
       const productData = {
         title: formData.title.trim(),
         price: parseFloat(formData.price),
         description: formData.description.trim(),
         imageUri: capturedImage.uri,
-        imageUrl: capturedImage.uri,
+        imageUrl: mainImageUrl,
         tags: formData.tags,
         type: formData.type || "miscellaneous",
         quantity: formData.quantity || 1,
         category: formData.category || "Miscellaneous",
-        additionalImages: formData.additionalImages || [],
+        additionalImages: uploadedAdditional.length
+          ? uploadedAdditional
+          : formData.additionalImages || [],
         sellerName, // Embedded username saved directly to product doc
         ...(formData.category === "Clothes"
           ? {

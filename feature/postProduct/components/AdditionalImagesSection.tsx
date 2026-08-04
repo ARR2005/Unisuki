@@ -1,5 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Text, TouchableOpacity, View, useColorScheme } from "react-native";
+import {
+    Image,
+    Text,
+    TouchableOpacity,
+    View,
+    useColorScheme,
+} from "react-native";
 
 type AdditionalImagesSectionProps = {
   additionalImages: string[];
@@ -31,9 +37,7 @@ export default function AdditionalImagesSection({
       <TouchableOpacity
         onPress={onPickImages}
         className={`border-2 border-dashed rounded-xl p-4 items-center ${
-          isDark
-            ? "border-[#01170f] bg-[#0e0e0e]"
-            : "border-gray-300 bg-white"
+          isDark ? "border-[#01170f] bg-[#0e0e0e]" : "border-gray-300 bg-white"
         }`}
         disabled={disabled || additionalImages.length >= 5}
       >
@@ -69,6 +73,16 @@ export default function AdditionalImagesSection({
                   source={{ uri: imageUri }}
                   className="w-full h-full"
                   resizeMode="cover"
+                  onError={(e) => {
+                    console.warn(
+                      "Additional image failed to load:",
+                      imageUri,
+                      e,
+                    );
+                  }}
+                  onLoad={() => {
+                    console.log("Additional image loaded:", imageUri);
+                  }}
                 />
                 <TouchableOpacity
                   onPress={() => onRemoveImage(imageUri)}

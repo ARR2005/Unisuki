@@ -1,6 +1,3 @@
-import { createAppNotification } from "@/feature/notifications/notifications";
-import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
-import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -13,9 +10,10 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   ScrollView,
   Text,
@@ -24,70 +22,122 @@ import {
   useColorScheme,
 } from "react-native";
 
+import { createAppNotification } from "@/feature/notifications/notifications";
+import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
+import { auth, db } from "@/service/firebaseConfigs";
+
+export interface ProductDetail {
+  title?: string;
+  price?: number;
+  total?: number;
+  description?: string;
+  category?: string;
+  sellerName?: string;
+  publishedDateLabel?: string;
+  image_uri?: string;
+  additionalImages?: string[];
+  sizes?: string;
+  styles?: string;
+  shoeSize?: string;
+  amount?: string;
+  stationaryType?: string;
+  [key: string]: any; // Allows flexible dynamic fields
+}
+
 export default function ProductDetailsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReserving, setIsReserving] = useState(false);
   const [isInitiatingChat, setIsInitiatingChat] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const { id, sellerId } = useLocalSearchParams<{
     id: string;
     sellerId: string;
   }>();
 
-  const {
-    loading,
-    error,
-    product,
-    title,
-    price = 0,
-    image_uri,
-    additionalImages = [],
-    description,
-    sellerName,
-    category,
-    sizes,
-    styles,
-    shoeSize,
-    amount,
-    stationaryType,
-    publishedDateLabel,
-  } = useProductDetail({
+  const { loading, error, product } = useProductDetail({
     productId: id,
-    sellerId: sellerId,
+    sellerId,
   });
 
-  const total = price;
+  // Safely destructure properties with fallbacks
+  const {
+    title = "",
+    price = 0,
+    total = 0,
+    description = "",
+    category = "",
+    sellerName = "Seller",
+    publishedDateLabel = "",
+    image_uri = "",
+    additionalImages = [],
+    sizes = "",
+    styles = "",
+    shoeSize = "",
+    amount = "",
+    stationaryType = "",
+  } = (product as Record<string, any>) || {};
 
-  const handleReserve = async () => {
+  // Filter valid remote image URIs
+  const allImages: string[] = (
+    image_uri ? [image_uri, ...additionalImages] : additionalImages || []
+  ).filter(
+    (u: string) =>
+      typeof u === "string" &&
+      (u.startsWith("http://") || u.startsWith("https://")),
+  );
+
+  const hasMultipleImages = allImages.length > 1;
+
+  // Shared Helper for User / Seller context validation
+  const getAuthAndContext = () => {
     const currentUser = auth.currentUser;
-
     if (!currentUser) {
-      alert("Please log in to reserve this item.");
-      return;
+      alert("Please log in to proceed.");
+      return null;
     }
-
     if (!sellerId || !id) {
       alert("This product is missing required details.");
-      return;
+      return null;
+    }
+    if (currentUser.uid === sellerId) {
+      alert("You cannot perform this action on your own listing.");
+      return null;
     }
 
-    if (currentUser.uid === sellerId) {
-      alert("You cannot reserve your own listing.");
-      return;
-    }
+    const safeSellerId = String(sellerId).trim();
+    const safeProductId = String(id).trim();
+    const buyerName =
+      currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+    const resolvedSellerName = sellerName || "Seller";
+
+    return {
+      currentUser,
+      safeSellerId,
+      safeProductId,
+      buyerName,
+      resolvedSellerName,
+    };
+  };
+
+  const handleReserve = async () => {
+    const ctx = getAuthAndContext();
+    if (!ctx) return;
+    const {
+      currentUser,
+      safeSellerId,
+      safeProductId,
+      buyerName,
+      resolvedSellerName,
+    } = ctx;
 
     setIsReserving(true);
 
     try {
-      const safeSellerId = String(sellerId).trim();
-      const safeProductId = String(id).trim();
-      const buyerName =
-        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
-      const resolvedSellerName = sellerName || "Seller";
-
       // 1. Mark item as reserved
       const productRef = doc(
         db,
@@ -98,7 +148,7 @@ export default function ProductDetailsScreen() {
       );
       await setDoc(productRef, { isReserved: true }, { merge: true });
 
-      // 2. Setup Chat document with participant names
+      // 2. Setup Chat document
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
       const chatRef = doc(db, "chats", chatId);
 
@@ -120,11 +170,11 @@ export default function ProductDetailsScreen() {
           reservation: {
             status: "pending",
             itemTitle: title || "Item",
-            itemPrice: price || 0,
+            itemPrice: price,
             totalPrice: total,
-            itemImage: image_uri || "",
+            itemImage: image_uri,
             sellerName: resolvedSellerName,
-            buyerName: buyerName,
+            buyerName,
             createdAt: serverTimestamp(),
           },
         },
@@ -181,28 +231,19 @@ export default function ProductDetailsScreen() {
   };
 
   const handleContactSeller = async () => {
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      alert("Please log in to contact the seller.");
-      return;
-    }
-
-    if (currentUser.uid === sellerId) {
-      alert("You cannot start a chat with yourself.");
-      return;
-    }
+    const ctx = getAuthAndContext();
+    if (!ctx) return;
+    const {
+      currentUser,
+      safeSellerId,
+      safeProductId,
+      buyerName,
+      resolvedSellerName,
+    } = ctx;
 
     setIsInitiatingChat(true);
 
     try {
-      const safeSellerId = String(sellerId).trim();
-      const safeProductId = String(id).trim();
-      const buyerName =
-        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
-      const resolvedSellerName = sellerName || "Seller";
-
-      // Direct Chat Identifier
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
       const chatRef = doc(db, "chats", chatId);
 
@@ -240,9 +281,8 @@ export default function ProductDetailsScreen() {
         });
       }
 
-      // Push to the direct chat screen
       router.push({
-        pathname: "/(chat)/[chatId]" as any,
+        pathname: "/(chat)/[chatId]",
         params: {
           chatId,
           isReservation: "false",
@@ -256,12 +296,6 @@ export default function ProductDetailsScreen() {
       setIsInitiatingChat(false);
     }
   };
-
-  const allImages = image_uri
-    ? [image_uri, ...additionalImages]
-    : additionalImages;
-  const hasMultipleImages = allImages.length > 1;
-  const currentImage = allImages[currentImageIndex] || image_uri || null;
 
   if (loading) {
     return (
@@ -314,7 +348,7 @@ export default function ProductDetailsScreen() {
         className="flex-1"
       >
         <View className="px-4 pt-1">
-          {/* Top Header */}
+          {/* Header */}
           <View className="flex-row items-center mb-4 mt-8">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -336,19 +370,50 @@ export default function ProductDetailsScreen() {
           </View>
 
           {/* Product Gallery */}
-          {currentImage ? (
+          {allImages.length > 0 ? (
             <View className="mb-4">
-              <Image
-                source={{ uri: currentImage }}
+              <ScrollView
+                ref={scrollRef}
+                horizontal
+                pagingEnabled
+                nestedScrollEnabled
+                directionalLockEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const offsetX = e.nativeEvent.contentOffset.x;
+                  const width = e.nativeEvent.layoutMeasurement.width;
+                  setCurrentImageIndex(Math.round(offsetX / width));
+                }}
                 className="w-full h-72 rounded-2xl"
-                resizeMode="cover"
-              />
+              >
+                {allImages.map((img: string, idx: number) => (
+                  <View
+                    key={`${img}-${idx}`}
+                    style={{ width: Dimensions.get("window").width - 32 }}
+                    className="h-72"
+                  >
+                    <Image
+                      source={{ uri: img }}
+                      className="w-full h-72 rounded-2xl"
+                      resizeMode="cover"
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+
               {hasMultipleImages && (
                 <View className="mt-3 flex-row justify-center gap-2">
-                  {allImages.map((image, index) => (
+                  {allImages.map((image: string, index: number) => (
                     <TouchableOpacity
                       key={`${image}-${index}`}
-                      onPress={() => setCurrentImageIndex(index)}
+                      onPress={() => {
+                        const width = Dimensions.get("window").width - 32;
+                        scrollRef.current?.scrollTo({
+                          x: index * width,
+                          animated: true,
+                        });
+                        setCurrentImageIndex(index);
+                      }}
                       className={`h-2.5 w-2.5 rounded-full ${
                         index === currentImageIndex
                           ? "bg-emerald-600"
@@ -375,7 +440,6 @@ export default function ProductDetailsScreen() {
               {title}
             </Text>
 
-            {/* Seller Name + Published At Date */}
             <View className="flex-row items-center justify-between mt-2">
               <View className="flex-row items-center gap-1.5">
                 <Ionicons
@@ -388,7 +452,7 @@ export default function ProductDetailsScreen() {
                     isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
-                  {sellerName || "Seller"}
+                  {sellerName}
                 </Text>
               </View>
 
@@ -431,54 +495,47 @@ export default function ProductDetailsScreen() {
             <View className="gap-1.5 pt-2 border-t border-gray-100 dark:border-slate-800/80">
               {category ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Category:</Text> {category}
                 </Text>
               ) : null}
+
               {sizes ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Sizes:</Text> {sizes}
                 </Text>
               ) : null}
+
               {styles ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Styles:</Text> {styles}
                 </Text>
               ) : null}
+
               {shoeSize ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Shoe size:</Text> {shoeSize}
                 </Text>
               ) : null}
+
               {amount ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Amount:</Text> {amount}
                 </Text>
               ) : null}
+
               {stationaryType ? (
                 <Text
-                  className={`text-sm ${
-                    isDark ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
                 >
                   <Text className="font-semibold">Stationery type:</Text>{" "}
                   {stationaryType}
@@ -497,16 +554,12 @@ export default function ProductDetailsScreen() {
           >
             <View className="flex-row justify-between">
               <Text
-                className={`text-sm ${
-                  isDark ? "text-gray-400" : "text-gray-600"
-                }`}
+                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
                 Item Price
               </Text>
               <Text
-                className={`text-base font-semibold ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
+                className={`text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 ₱{price.toFixed(2)}
               </Text>
@@ -514,9 +567,7 @@ export default function ProductDetailsScreen() {
 
             <View className="mt-3 flex-row justify-between border-t border-gray-100 dark:border-slate-800 pt-2.5">
               <Text
-                className={`font-bold text-base ${
-                  isDark ? "text-white" : "text-gray-900"
-                }`}
+                className={`font-bold text-base ${isDark ? "text-white" : "text-gray-900"}`}
               >
                 Total Price
               </Text>

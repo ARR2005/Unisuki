@@ -46,9 +46,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "cli": {
-      "appVersionSource": "app.json"
-    },
+
     "extra": {
       "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCbMJqiZrow34V2Nuk1s5OseLAACL3aBfs",
       "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "unisukiserver.firebaseapp.com",
@@ -59,7 +57,7 @@
       "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-8131BBHX62",
       "router": {},
       "EXPO_PUBLIC_FIREBASE_DATABASE_URL": "https://unisukiserver-default-rtdb.asia-southeast1.firebasedatabase.app",
-      "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "unisukiasset",
+      "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME": "unisukiAsset",
       "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "unisuk_posts",
       "eas": {
         "projectId": "268c3702-9679-46c1-894b-9f1d3384ac81"

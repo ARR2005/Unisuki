@@ -13,6 +13,7 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { Image } from "react-native";
 
 export type Product = {
   id: string;
@@ -66,16 +67,26 @@ export function useFetchSellerProducts() {
 
           // Filter out items that have been sold
           const activeProducts = allProducts.filter(
-            (product) => product.status !== "sold"
+            (product) => product.status !== "sold",
           );
 
           setProducts(activeProducts);
           setLoading(false);
+
+          const imageUrls = activeProducts
+            .map((product) => product.imageUrl || product.imageUri)
+            .filter((url): url is string => Boolean(url));
+
+          imageUrls.forEach((url) => {
+            Image.prefetch(url).catch(() => {
+              console.warn("Failed to prefetch seller product image:", url);
+            });
+          });
         },
         (error) => {
           console.error("Firestore read error:", error);
           setLoading(false);
-        }
+        },
       );
     });
 
@@ -96,7 +107,7 @@ export function useUpdateProduct() {
   const updateProduct = async (
     product: Product,
     newTitle: string,
-    newPrice: string
+    newPrice: string,
   ) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return false;
@@ -115,7 +126,7 @@ export function useUpdateProduct() {
         "user",
         currentUser.uid,
         "itemPosted",
-        product.id
+        product.id,
       );
       const parsedPrice = parseFloat(newPrice) || 0;
 
@@ -158,7 +169,7 @@ export function useDeleteProduct() {
     try {
       const itemRef = doc(db, "user", currentUser.uid, "itemPosted", productId);
       const itemSnap = await getDocs(
-        query(collection(db, "user", currentUser.uid, "itemPosted"))
+        query(collection(db, "user", currentUser.uid, "itemPosted")),
       );
       const itemExists = itemSnap.docs.some((snap) => snap.id === productId);
 
@@ -172,7 +183,7 @@ export function useDeleteProduct() {
         collection(db, "chats"),
         where("productId", "==", productId),
         where("sellerId", "==", currentUser.uid),
-        where("type", "==", "reservation")
+        where("type", "==", "reservation"),
       );
 
       const reservationChats = await getDocs(reservationChatsQuery);

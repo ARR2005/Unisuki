@@ -1,6 +1,12 @@
-import { useState, useEffect } from "react";
-import { collectionGroup, onSnapshot, query, Unsubscribe } from "firebase/firestore";
-import { db, auth } from "@/service/firebaseConfigs";
+import { auth, db } from "@/service/firebaseConfigs";
+import {
+  collectionGroup,
+  onSnapshot,
+  query,
+  Unsubscribe,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { Image } from "react-native";
 
 export type Product = {
   id: string;
@@ -41,7 +47,8 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
 
           // Extract parent doc ID directly from Firestore reference path:
           // user/{sellerUid}/itemPosted/{productId}
-          const sellerUidFromPath = docSnap.ref.parent.parent?.id || data.userId;
+          const sellerUidFromPath =
+            docSnap.ref.parent.parent?.id || data.userId;
 
           return {
             id: docSnap.id,
@@ -50,7 +57,10 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
             isReserved: Boolean(data.isReserved),
             status: data.status || "active",
             title: data.tags?.title || data.title || "Untitled Product",
-            imageUrl: data.imageUrl || data.imageUri || "https://picsum.photos/id/26/400/300",
+            imageUrl:
+              data.imageUrl ||
+              data.imageUri ||
+              "https://picsum.photos/id/26/400/300",
           };
         });
 
@@ -59,19 +69,27 @@ export function useFetchBuyerProduct(excludeOwnProducts: boolean = true) {
           // Item must NOT be reserved AND status must NOT be "sold"
           const isAvailable = !product.isReserved && product.status !== "sold";
 
-          return excludeOwnProducts
-            ? !isMyPost && isAvailable
-            : isMyPost;
+          return excludeOwnProducts ? !isMyPost && isAvailable : isMyPost;
         });
 
         setProducts(filteredProducts);
         setLoading(false);
+
+        const imageUrls = filteredProducts
+          .map((product) => product.imageUrl)
+          .filter((url): url is string => Boolean(url));
+
+        imageUrls.forEach((url) => {
+          Image.prefetch(url).catch(() => {
+            console.warn("Failed to prefetch image:", url);
+          });
+        });
       },
       (err) => {
         console.error("Firestore buyer fetch error:", err);
         setError("Failed to fetch products.");
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
