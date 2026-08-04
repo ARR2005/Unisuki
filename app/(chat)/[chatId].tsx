@@ -14,7 +14,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
@@ -50,7 +52,12 @@ function ReservationQRHeader({
   const totalPrice = reservationData?.totalPrice || reservationData?.price || 0;
   const status = reservationData?.status || "pending";
   const productImage =
-    reservationData?.itemImage || reservationData?.productImage || null;
+    reservationData?.itemImage ||
+    reservationData?.imageUrl ||
+    reservationData?.productImage ||
+    reservationData?.reservation?.itemImage ||
+    reservationData?.reservation?.imageUrl ||
+    null;
 
   const isConfirmed = status === "completed" || status === "confirmed";
   const isRejected = status === "declined" || status === "rejected";
@@ -434,115 +441,122 @@ export default function ChatScreen() {
   };
 
   return (
-    <View className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}>
-      <Stack.Screen
-        options={{
-          title: headerTitle,
-          headerTitle: headerTitle,
-          headerStyle: { backgroundColor: isDark ? "#0e0e0e" : "#ffffff" },
-          headerTintColor: isDark ? "#ffffff" : "#111827",
-        }}
-      />
-
-      {isReservation === "true" && (
-        <ReservationQRHeader
-          chatId={chatId}
-          reservationData={reservationData}
-          isSeller={isSeller}
-          isDark={isDark}
-        />
-      )}
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, gap: 12 }}
-          renderItem={({ item }) => {
-            const isMe = item.senderId === currentUser?.uid;
-            const formattedTime = formatTime(item.createdAt);
-
-            if (item.systemMessage) {
-              return (
-                <View className="my-1.5 p-2 px-3.5 rounded-full bg-gray-200/80 dark:bg-slate-800 self-center max-w-[85%]">
-                  <Text className="text-[11px] text-center font-medium text-gray-600 dark:text-gray-300">
-                    {item.text}
-                  </Text>
-                </View>
-              );
-            }
-
-            return (
-              <View
-                className={`max-w-[80%] px-3.5 py-2 rounded-2xl ${
-                  isMe
-                    ? "self-end bg-emerald-600 rounded-br-xs"
-                    : "self-start bg-white dark:bg-slate-800 rounded-bl-xs border border-gray-100 dark:border-slate-700/60"
-                }`}
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: isDark ? 0.2 : 0.05,
-                  shadowRadius: 3,
-                  elevation: 1,
-                }}
-              >
-                <Text
-                  className={`text-sm leading-5 ${
-                    isMe
-                      ? "text-white"
-                      : isDark
-                        ? "text-gray-100"
-                        : "text-gray-800"
-                  }`}
-                >
-                  {item.text}
-                </Text>
-
-                {formattedTime ? (
-                  <Text
-                    className={`text-[10px] mt-1 text-right ${
-                      isMe
-                        ? "text-emerald-100/80"
-                        : "text-gray-400 dark:text-gray-400"
-                    }`}
-                  >
-                    {formattedTime}
-                  </Text>
-                ) : null}
-              </View>
-            );
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 75}
+    >
+      <View className={`flex-1 ${isDark ? "bg-[#0e0e0e]" : "bg-[#f3f3f3]"}`}>
+        <Stack.Screen
+          options={{
+            title: headerTitle,
+            headerTitle: headerTitle,
+            headerStyle: { backgroundColor: isDark ? "#0e0e0e" : "#ffffff" },
+            headerTintColor: isDark ? "#ffffff" : "#111827",
           }}
         />
-      )}
 
-      <View
-        className={`p-2.5 px-3 flex-row items-center gap-2 border-t ${
-          isDark
-            ? "bg-[#0e0e0e] border-slate-800"
-            : "bg-white border-gray-200/80"
-        }`}
-      >
-        <TextInput
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Type a message..."
-          placeholderTextColor={isDark ? "#64748b" : "#9ca3af"}
-          className={`flex-1 px-4 py-2 text-sm rounded-full ${
-            isDark ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-900"
+        {isReservation === "true" && (
+          <ReservationQRHeader
+            chatId={chatId}
+            reservationData={reservationData}
+            isSeller={isSeller}
+            isDark={isDark}
+          />
+        )}
+
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#059669" />
+          </View>
+        ) : (
+          <FlatList
+            data={messages}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16, gap: 12 }}
+            renderItem={({ item }) => {
+              const isMe = item.senderId === currentUser?.uid;
+              const formattedTime = formatTime(item.createdAt);
+
+              if (item.systemMessage) {
+                return (
+                  <View className="my-1.5 p-2 px-3.5 rounded-full bg-gray-200/80 dark:bg-slate-800 self-center max-w-[85%]">
+                    <Text className="text-[11px] text-center font-medium text-gray-600 dark:text-gray-300">
+                      {item.text}
+                    </Text>
+                  </View>
+                );
+              }
+
+              return (
+                <View
+                  className={`max-w-[80%] px-3.5 py-2 rounded-2xl ${
+                    isMe
+                      ? "self-end bg-emerald-600 rounded-br-xs"
+                      : "self-start bg-white dark:bg-slate-800 rounded-bl-xs border border-gray-100 dark:border-slate-700/60"
+                  }`}
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: isDark ? 0.2 : 0.05,
+                    shadowRadius: 3,
+                    elevation: 1,
+                  }}
+                >
+                  <Text
+                    className={`text-sm leading-5 ${
+                      isMe
+                        ? "text-white"
+                        : isDark
+                          ? "text-gray-100"
+                          : "text-gray-800"
+                    }`}
+                  >
+                    {item.text}
+                  </Text>
+
+                  {formattedTime ? (
+                    <Text
+                      className={`text-[10px] mt-1 text-right ${
+                        isMe
+                          ? "text-emerald-100/80"
+                          : "text-gray-400 dark:text-gray-400"
+                      }`}
+                    >
+                      {formattedTime}
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            }}
+          />
+        )}
+
+        <View
+          className={`p-2.5 px-3 flex-row items-center gap-2 border-t ${
+            isDark
+              ? "bg-[#0e0e0e] border-slate-800"
+              : "bg-white border-gray-200/80"
           }`}
-        />
-        <TouchableOpacity
-          onPress={handleSend}
-          className="p-2.5 bg-emerald-600 rounded-full active:bg-emerald-700"
         >
-          <Ionicons name="send" size={16} color="#fff" />
-        </TouchableOpacity>
+          <TextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Type a message..."
+            placeholderTextColor={isDark ? "#64748b" : "#9ca3af"}
+            className={`flex-1 px-4 py-2 text-sm rounded-full ${
+              isDark ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-900"
+            }`}
+          />
+          <TouchableOpacity
+            onPress={handleSend}
+            className="p-2.5 bg-emerald-600 rounded-full active:bg-emerald-700"
+          >
+            <Ionicons name="send" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

@@ -161,6 +161,8 @@ export function useProductDetail({
     product,
     title: product?.title,
     price,
+    imageUrl: product?.imageUrl || product?.imageUri,
+    imageUri: product?.imageUri || product?.imageUrl,
     image_uri: product?.imageUrl || product?.imageUri,
     additionalImages: Array.isArray(product?.additionalImages)
       ? product.additionalImages
@@ -173,6 +175,7 @@ export function useProductDetail({
     shoeSize: product?.shoeSize,
     amount: product?.amount,
     stationaryType: product?.stationaryType,
+    type: product?.type,
     transactionFee,
     total,
     publishedDateLabel,

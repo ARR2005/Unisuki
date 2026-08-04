@@ -229,7 +229,7 @@ export default function DirectChatScreen() {
 
           {/* Message Input Container */}
           <View
-            className={`p-3 px-4 flex-row items-center gap-2.5 border-t ${
+            className={`pb-10 p-3 px-4 flex-row items-center gap-2.5 border-t ${
               isDark
                 ? "bg-[#0e0e0e] border-[#01170f]"
                 : "bg-white border-gray-200"
@@ -253,6 +253,7 @@ export default function DirectChatScreen() {
               <Ionicons name="send" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
+          <View className="h-10" />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

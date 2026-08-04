@@ -1,3 +1,6 @@
+import { createAppNotification } from "@/feature/notifications/notifications";
+import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
+import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -10,134 +13,84 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import React, { useRef, useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
   useColorScheme,
+  Dimensions,
 } from "react-native";
-
-import { createAppNotification } from "@/feature/notifications/notifications";
-import { useProductDetail } from "@/feature/Product/hooks/useProductDetail";
-import { auth, db } from "@/service/firebaseConfigs";
-
-export interface ProductDetail {
-  title?: string;
-  price?: number;
-  total?: number;
-  description?: string;
-  category?: string;
-  sellerName?: string;
-  publishedDateLabel?: string;
-  image_uri?: string;
-  additionalImages?: string[];
-  sizes?: string;
-  styles?: string;
-  shoeSize?: string;
-  amount?: string;
-  stationaryType?: string;
-  [key: string]: any; // Allows flexible dynamic fields
-}
 
 export default function ProductDetailsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReserving, setIsReserving] = useState(false);
   const [isInitiatingChat, setIsInitiatingChat] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
 
   const { id, sellerId } = useLocalSearchParams<{
     id: string;
     sellerId: string;
   }>();
 
-  const { loading, error, product } = useProductDetail({
+  const {
+    loading,
+    error,
+    product,
+    title,
+    price = 0,
+    imageUrl,
+    additionalImages = [],
+    description,
+    sellerName,
+    category,
+    sizes,
+    styles,
+    shoeSize,
+    amount,
+    stationaryType,
+    type,
+    publishedDateLabel,
+  } = useProductDetail({
     productId: id,
-    sellerId,
+    sellerId: sellerId,
   });
 
-  // Safely destructure properties with fallbacks
-  const {
-    title = "",
-    price = 0,
-    total = 0,
-    description = "",
-    category = "",
-    sellerName = "Seller",
-    publishedDateLabel = "",
-    image_uri = "",
-    additionalImages = [],
-    sizes = "",
-    styles = "",
-    shoeSize = "",
-    amount = "",
-    stationaryType = "",
-  } = (product as Record<string, any>) || {};
-
-  // Filter valid remote image URIs
-  const allImages: string[] = (
-    image_uri ? [image_uri, ...additionalImages] : additionalImages || []
-  ).filter(
-    (u: string) =>
-      typeof u === "string" &&
-      (u.startsWith("http://") || u.startsWith("https://")),
-  );
-
-  const hasMultipleImages = allImages.length > 1;
-
-  // Shared Helper for User / Seller context validation
-  const getAuthAndContext = () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      alert("Please log in to proceed.");
-      return null;
-    }
-    if (!sellerId || !id) {
-      alert("This product is missing required details.");
-      return null;
-    }
-    if (currentUser.uid === sellerId) {
-      alert("You cannot perform this action on your own listing.");
-      return null;
-    }
-
-    const safeSellerId = String(sellerId).trim();
-    const safeProductId = String(id).trim();
-    const buyerName =
-      currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
-    const resolvedSellerName = sellerName || "Seller";
-
-    return {
-      currentUser,
-      safeSellerId,
-      safeProductId,
-      buyerName,
-      resolvedSellerName,
-    };
-  };
+  const total = price;
 
   const handleReserve = async () => {
-    const ctx = getAuthAndContext();
-    if (!ctx) return;
-    const {
-      currentUser,
-      safeSellerId,
-      safeProductId,
-      buyerName,
-      resolvedSellerName,
-    } = ctx;
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      alert("Please log in to reserve this item.");
+      return;
+    }
+
+    if (!sellerId || !id) {
+      alert("This product is missing required details.");
+      return;
+    }
+
+    if (currentUser.uid === sellerId) {
+      alert("You cannot reserve your own listing.");
+      return;
+    }
 
     setIsReserving(true);
 
     try {
+      const safeSellerId = String(sellerId).trim();
+      const safeProductId = String(id).trim();
+      const buyerName =
+        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+      const resolvedSellerName = sellerName || "Seller";
+
       // 1. Mark item as reserved
       const productRef = doc(
         db,
@@ -148,7 +101,7 @@ export default function ProductDetailsScreen() {
       );
       await setDoc(productRef, { isReserved: true }, { merge: true });
 
-      // 2. Setup Chat document
+      // 2. Setup Chat document with participant names
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
       const chatRef = doc(db, "chats", chatId);
 
@@ -170,11 +123,11 @@ export default function ProductDetailsScreen() {
           reservation: {
             status: "pending",
             itemTitle: title || "Item",
-            itemPrice: price,
+            itemPrice: price || 0,
             totalPrice: total,
-            itemImage: image_uri,
+            itemImage: imageUrl || "",
             sellerName: resolvedSellerName,
-            buyerName,
+            buyerName: buyerName,
             createdAt: serverTimestamp(),
           },
         },
@@ -231,19 +184,28 @@ export default function ProductDetailsScreen() {
   };
 
   const handleContactSeller = async () => {
-    const ctx = getAuthAndContext();
-    if (!ctx) return;
-    const {
-      currentUser,
-      safeSellerId,
-      safeProductId,
-      buyerName,
-      resolvedSellerName,
-    } = ctx;
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      alert("Please log in to contact the seller.");
+      return;
+    }
+
+    if (currentUser.uid === sellerId) {
+      alert("You cannot start a chat with yourself.");
+      return;
+    }
 
     setIsInitiatingChat(true);
 
     try {
+      const safeSellerId = String(sellerId).trim();
+      const safeProductId = String(id).trim();
+      const buyerName =
+        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+      const resolvedSellerName = sellerName || "Seller";
+
+      // Direct Chat Identifier
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
       const chatRef = doc(db, "chats", chatId);
 
@@ -282,7 +244,7 @@ export default function ProductDetailsScreen() {
       }
 
       router.push({
-        pathname: "/(chat)/[chatId]",
+        pathname: "/(chat)/[chatId]" as any,
         params: {
           chatId,
           isReservation: "false",
@@ -296,6 +258,16 @@ export default function ProductDetailsScreen() {
       setIsInitiatingChat(false);
     }
   };
+
+  const allImages = (
+    imageUrl ? [imageUrl, ...additionalImages] : additionalImages || []
+  ).filter(
+    (u) =>
+      typeof u === "string" &&
+      (u.startsWith("http://") || u.startsWith("https://")),
+  );
+
+  const hasMultipleImages = allImages.length > 1;
 
   if (loading) {
     return (
@@ -348,7 +320,7 @@ export default function ProductDetailsScreen() {
         className="flex-1"
       >
         <View className="px-4 pt-1">
-          {/* Header */}
+          {/* Top Header */}
           <View className="flex-row items-center mb-4 mt-8">
             <TouchableOpacity
               onPress={() => router.back()}
@@ -370,7 +342,7 @@ export default function ProductDetailsScreen() {
           </View>
 
           {/* Product Gallery */}
-          {allImages.length > 0 ? (
+          {allImages && allImages.length > 0 ? (
             <View className="mb-4">
               <ScrollView
                 ref={scrollRef}
@@ -382,11 +354,12 @@ export default function ProductDetailsScreen() {
                 onMomentumScrollEnd={(e) => {
                   const offsetX = e.nativeEvent.contentOffset.x;
                   const width = e.nativeEvent.layoutMeasurement.width;
-                  setCurrentImageIndex(Math.round(offsetX / width));
+                  const index = Math.round(offsetX / width);
+                  setCurrentImageIndex(index);
                 }}
                 className="w-full h-72 rounded-2xl"
               >
-                {allImages.map((img: string, idx: number) => (
+                {allImages.map((img, idx) => (
                   <View
                     key={`${img}-${idx}`}
                     style={{ width: Dimensions.get("window").width - 32 }}
@@ -396,6 +369,16 @@ export default function ProductDetailsScreen() {
                       source={{ uri: img }}
                       className="w-full h-72 rounded-2xl"
                       resizeMode="cover"
+                      onError={(e) =>
+                        console.warn(
+                          "Product detail image failed to load:",
+                          img,
+                          e,
+                        )
+                      }
+                      onLoad={() =>
+                        console.log("Product detail image loaded:", img)
+                      }
                     />
                   </View>
                 ))}
@@ -403,22 +386,20 @@ export default function ProductDetailsScreen() {
 
               {hasMultipleImages && (
                 <View className="mt-3 flex-row justify-center gap-2">
-                  {allImages.map((image: string, index: number) => (
+                  {allImages.map((image, index) => (
                     <TouchableOpacity
                       key={`${image}-${index}`}
                       onPress={() => {
+                        const scrollView: any = scrollRef.current;
                         const width = Dimensions.get("window").width - 32;
-                        scrollRef.current?.scrollTo({
-                          x: index * width,
-                          animated: true,
-                        });
+                        if (scrollView && scrollView.scrollTo)
+                          scrollView.scrollTo({
+                            x: index * width,
+                            animated: true,
+                          });
                         setCurrentImageIndex(index);
                       }}
-                      className={`h-2.5 w-2.5 rounded-full ${
-                        index === currentImageIndex
-                          ? "bg-emerald-600"
-                          : "bg-gray-300"
-                      }`}
+                      className={`h-2.5 w-2.5 rounded-full ${index === currentImageIndex ? "bg-emerald-600" : "bg-gray-300"}`}
                     />
                   ))}
                 </View>
@@ -440,6 +421,7 @@ export default function ProductDetailsScreen() {
               {title}
             </Text>
 
+            {/* Seller Name + Published At Date */}
             <View className="flex-row items-center justify-between mt-2">
               <View className="flex-row items-center gap-1.5">
                 <Ionicons
@@ -452,7 +434,7 @@ export default function ProductDetailsScreen() {
                     isDark ? "text-emerald-400" : "text-emerald-800"
                   }`}
                 >
-                  {sellerName}
+                  {sellerName || "Seller"}
                 </Text>
               </View>
 
@@ -492,10 +474,13 @@ export default function ProductDetailsScreen() {
               {description || "No description available."}
             </Text>
 
+            {/* Dynamic Specs Section */}
             <View className="gap-1.5 pt-2 border-t border-gray-100 dark:border-slate-800/80">
               {category ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Category:</Text> {category}
                 </Text>
@@ -503,7 +488,9 @@ export default function ProductDetailsScreen() {
 
               {sizes ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Sizes:</Text> {sizes}
                 </Text>
@@ -511,7 +498,9 @@ export default function ProductDetailsScreen() {
 
               {styles ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Styles:</Text> {styles}
                 </Text>
@@ -519,7 +508,9 @@ export default function ProductDetailsScreen() {
 
               {shoeSize ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Shoe size:</Text> {shoeSize}
                 </Text>
@@ -527,7 +518,9 @@ export default function ProductDetailsScreen() {
 
               {amount ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Amount:</Text> {amount}
                 </Text>
@@ -535,10 +528,22 @@ export default function ProductDetailsScreen() {
 
               {stationaryType ? (
                 <Text
-                  className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
                 >
                   <Text className="font-semibold">Stationery type:</Text>{" "}
                   {stationaryType}
+                </Text>
+              ) : null}
+
+              {type ? (
+                <Text
+                  className={`text-sm capitalize ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  <Text className="font-semibold">Type:</Text> {type}
                 </Text>
               ) : null}
             </View>
@@ -554,12 +559,16 @@ export default function ProductDetailsScreen() {
           >
             <View className="flex-row justify-between">
               <Text
-                className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                className={`text-sm ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
               >
                 Item Price
               </Text>
               <Text
-                className={`text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`text-base font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 ₱{price.toFixed(2)}
               </Text>
@@ -567,7 +576,9 @@ export default function ProductDetailsScreen() {
 
             <View className="mt-3 flex-row justify-between border-t border-gray-100 dark:border-slate-800 pt-2.5">
               <Text
-                className={`font-bold text-base ${isDark ? "text-white" : "text-gray-900"}`}
+                className={`font-bold text-base ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
               >
                 Total Price
               </Text>
