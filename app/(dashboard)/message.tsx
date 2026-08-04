@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-} from "react-native";
+import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { auth, db } from "@/service/firebaseConfigs";
-import { collection, getDocs } from "firebase/firestore";
+import {
+    addDoc,
+    collection,
+    doc,
+    getDocs,
+    query,
+    serverTimestamp,
+    setDoc,
+    where,
+} from "firebase/firestore";
+import React, { useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    FlatList,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    useColorScheme,
+} from "react-native";
 
 interface ChatUser {
   id: string;
@@ -41,7 +50,9 @@ export default function MessageScreen() {
         const fetchedUsersMap = new Map<string, ChatUser>();
 
         // 1. Fetch from userVerifications collection
-        const verificationsSnap = await getDocs(collection(db, "userVerifications"));
+        const verificationsSnap = await getDocs(
+          collection(db, "userVerifications"),
+        );
         verificationsSnap.docs.forEach((docSnap) => {
           const data = docSnap.data();
           const profile = data.profileData || {};
@@ -87,30 +98,98 @@ export default function MessageScreen() {
   }, [currentUser]);
 
   const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+    user.name.toLowerCase().includes(searchQuery.toLowerCase().trim()),
   );
 
-  const handleStartChat = (recipient: ChatUser) => {
+  const handleStartChat = async (recipient: ChatUser) => {
     if (!currentUser) return;
 
-    // Generate a consistent direct chat ID between two users
-    const sortedIds = [currentUser.uid, recipient.id].sort();
-    const chatId = `${sortedIds[0]}_${sortedIds[1]}_direct`;
+    const productId = "";
+    const chatId = `${currentUser.uid}_${recipient.id}_${productId}_res`;
+    const chatRef = doc(db, "chats", chatId);
 
-    router.push({
-      pathname: "/(chat)/direct/[chatId]" as any,
-      params: {
-        chatId,
-        otherUserName: recipient.name,
-      },
-    });
+    try {
+      const messagesRef = collection(db, "messages");
+      const existingChatQuery = query(
+        collection(db, "chats"),
+        where("participants", "array-contains", currentUser.uid),
+        where("type", "==", "reservation"),
+      );
+      const snapshot = await getDocs(existingChatQuery);
+
+      let resolvedChatId = chatId;
+      let chatExists = false;
+
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        const participants: string[] = data.participants || [];
+        if (participants.includes(recipient.id)) {
+          resolvedChatId = docSnap.id;
+          chatExists = true;
+        }
+      });
+
+      await setDoc(
+        chatRef,
+        {
+          chatId,
+          participants: [currentUser.uid, recipient.id],
+          type: "reservation",
+          participantNames: {
+            [currentUser.uid]:
+              currentUser.displayName ||
+              currentUser.email?.split("@")[0] ||
+              "You",
+            [recipient.id]: recipient.name,
+          },
+        },
+        { merge: true },
+      );
+
+      if (!chatExists) {
+        const initialMessageQuery = query(
+          messagesRef,
+          where("chatId", "==", chatId),
+        );
+        const existingMessages = await getDocs(initialMessageQuery);
+
+        if (existingMessages.empty) {
+          await addDoc(messagesRef, {
+            chatId,
+            senderId: currentUser.uid,
+            text: "Chat initiated.",
+            createdAt: serverTimestamp(),
+            systemMessage: true,
+          });
+        }
+      }
+
+      router.push({
+        pathname: "/(chat)/[chatId]" as any,
+        params: {
+          chatId: resolvedChatId,
+          isReservation: "false",
+          otherUserName: recipient.name,
+        },
+      });
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      router.push({
+        pathname: "/(chat)/[chatId]" as any,
+        params: {
+          chatId,
+          isReservation: "false",
+          otherUserName: recipient.name,
+        },
+      });
+    }
   };
 
   return (
     <View className="flex-1 bg-transparent">
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Screen Header (Matches Reservations Header) */}
+      {/* Screen Header */}
       <View className="pt-12 pb-6 px-4">
         <Text
           className={`text-4xl font-extrabold tracking-wide text-center ${
@@ -121,7 +200,7 @@ export default function MessageScreen() {
         </Text>
       </View>
 
-      {/* Main Content Card Wrapper with rounded top corners */}
+      {/* Main Content Card Wrapper */}
       <View
         className={`flex-1 rounded-t-3xl overflow-hidden border-t ${
           isDark

@@ -1,15 +1,16 @@
 import { createAppNotification } from "@/feature/notifications/notifications";
-import auth from "@/service/firebaseConfigs";
+import firebaseAuth from "@/service/firebaseConfigs";
+import Constants from "expo-constants";
+import * as FileSystem from "expo-file-system/legacy";
 import { getApp } from "firebase/app";
 import {
-    addDoc,
-    collection,
-    getDocs,
-    getFirestore,
-    serverTimestamp,
+  addDoc,
+  collection,
+  getDocs,
+  getFirestore,
+  serverTimestamp,
 } from "firebase/firestore";
 import { useState } from "react";
-import * as FileSystem from 'expo-file-system';
 import { Platform } from "react-native";
 
 export interface VerificationProfileData {
@@ -26,8 +27,17 @@ export type VerificationImages = {
   selfie: string | null;
 };
 
-const CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const expoExtra =
+  (Constants as any)?.expoConfig?.extra ??
+  (Constants as any)?.manifest?.extra ??
+  {};
+
+const CLOUD_NAME =
+  process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME ??
+  expoExtra.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET =
+  process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET ??
+  expoExtra.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
 // Helper function to upload a single local URI to Cloudinary
@@ -37,11 +47,11 @@ async function uploadToCloudinary(uri: string): Promise<string> {
   let uploadUri = uri;
   // On Android, if the URI is a content URI, copy it to a temporary file
   // to ensure it can be uploaded correctly.
-  if (Platform.OS === 'android' && uri.startsWith('content://')) {
+  if (Platform.OS === "android" && uri.startsWith("content://")) {
     try {
-      const tempDir = FileSystem.cacheDirectory + 'cloudinary-uploads/';
+      const tempDir = FileSystem.cacheDirectory + "cloudinary-uploads/";
       await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
-      const tempFilePath = tempDir + uri.split('/').pop();
+      const tempFilePath = tempDir + uri.split("/").pop();
       await FileSystem.copyAsync({ from: uri, to: tempFilePath });
       uploadUri = tempFilePath;
       console.log("📄 Copied content URI to temporary file:", uploadUri);
@@ -63,26 +73,26 @@ async function uploadToCloudinary(uri: string): Promise<string> {
   }
 
   const formData = new FormData();
-  
-  const file: { uri: string, type: string, name: string } = {
+
+  const file: { uri: string; type: string; name: string } = {
     uri: uploadUri,
-    type: 'image/jpeg',
-    name: 'upload.jpg',
+    type: "image/jpeg",
+    name: "upload.jpg",
   };
 
-  const fileExtension = uploadUri.split('.').pop()?.toLowerCase();
-  if (fileExtension === 'png') {
-    file.type = 'image/png';
-  } else if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
-    file.type = 'image/jpeg';
+  const fileExtension = uploadUri.split(".").pop()?.toLowerCase();
+  if (fileExtension === "png") {
+    file.type = "image/png";
+  } else if (fileExtension === "jpg" || fileExtension === "jpeg") {
+    file.type = "image/jpeg";
   }
-  
-  const fileName = uploadUri.split('/').pop();
+
+  const fileName = uploadUri.split("/").pop();
   if (fileName) {
     file.name = fileName;
   }
-  
-  console.log('📄 Uploading file with details:', file);
+
+  console.log("📄 Uploading file with details:", file);
 
   formData.append("file", file as any);
   formData.append("upload_preset", UPLOAD_PRESET);
@@ -96,13 +106,14 @@ async function uploadToCloudinary(uri: string): Promise<string> {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ Cloudinary Upload Error:", { 
+      console.error("❌ Cloudinary Upload Error:", {
         status: response.status,
         statusText: response.statusText,
-        error: data.error 
+        error: data.error,
       });
       throw new Error(
-        data.error?.message || `Failed to upload image to Cloudinary. Status: ${response.status}`,
+        data.error?.message ||
+          `Failed to upload image to Cloudinary. Status: ${response.status}`,
       );
     }
 
@@ -136,7 +147,7 @@ export function useInsertUserVerification() {
     setError(null);
 
     try {
-      if (!auth.currentUser) {
+      if (!firebaseAuth.currentUser) {
         throw new Error("You must be logged in to submit verification.");
       }
 
@@ -167,7 +178,7 @@ export function useInsertUserVerification() {
       console.log("💾 Writing verification document to Firestore...");
       const db = getFirestore(getApp());
       const docRef = await addDoc(collection(db, "userVerifications"), {
-        uid: auth.currentUser?.uid ?? null,
+        uid: firebaseAuth.currentUser?.uid ?? null,
         profileData,
         images: uploadedImages,
         isVerified: false,
@@ -190,7 +201,7 @@ export function useInsertUserVerification() {
       if (adminRecipientUids.length > 0) {
         await createAppNotification({
           recipientUids: adminRecipientUids,
-          senderUid: auth.currentUser?.uid || "",
+          senderUid: firebaseAuth.currentUser?.uid || "",
           title: "New verification request",
           body: `${profileData.name || "A new user"} has completed account setup and is waiting for verification.`,
           type: "verification",

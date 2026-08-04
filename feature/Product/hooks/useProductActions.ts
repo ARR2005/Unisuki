@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { auth, db } from "@/service/firebaseConfigs";
 import { useRouter } from "expo-router";
 import {
   addDoc,
@@ -9,7 +9,7 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { auth, db } from "@/service/firebaseConfigs";
+import { useState } from "react";
 
 interface UseProductActionsProps {
   productId: string;
@@ -71,7 +71,7 @@ export function useProductActions({
 
       const reservationDocRef = await addDoc(
         collection(db, "reservations"),
-        reservationPayload
+        reservationPayload,
       );
 
       // Step C: Create deterministic reservation chat session
@@ -95,15 +95,18 @@ export function useProductActions({
             id: reservationDocRef.id,
           },
         },
-        { merge: true }
+        { merge: true },
       );
 
       // Step D: Send initial user message (not systemMessage)
-      const messagesRef = collection(db, "chats", chatId, "messages");
-      const existingMessages = await getDocs(messagesRef);
+      const messagesRef = collection(db, "messages");
+      const existingMessages = await getDocs(
+        query(messagesRef, where("chatId", "==", chatId)),
+      );
 
       if (existingMessages.empty) {
         await addDoc(messagesRef, {
+          chatId,
           senderId: currentUser.uid,
           text: `Hi! I would like to reserve "${title}" for ₱${total.toFixed(2)}.`,
           createdAt: serverTimestamp(),
@@ -141,7 +144,7 @@ export function useProductActions({
     setIsInitiatingChat(true);
 
     try {
-      const chatId = `${currentUser.uid}_${sellerId}_${productId}_direct`;
+      const chatId = `${currentUser.uid}_${sellerId}_${productId}_res`;
       const chatRef = doc(db, "chats", chatId);
 
       await setDoc(
@@ -152,18 +155,21 @@ export function useProductActions({
           buyerId: currentUser.uid,
           sellerId,
           productId,
-          type: "direct",
+          type: "reservation",
           updatedAt: serverTimestamp(),
           lastMessage: `Inquired about ${title}`,
         },
-        { merge: true }
+        { merge: true },
       );
 
-      const messagesRef = collection(db, "chats", chatId, "messages");
-      const existingMessages = await getDocs(messagesRef);
+      const messagesRef = collection(db, "messages");
+      const existingMessages = await getDocs(
+        query(messagesRef, where("chatId", "==", chatId)),
+      );
 
       if (existingMessages.empty) {
         await addDoc(messagesRef, {
+          chatId,
           senderId: currentUser.uid,
           text: `Hi! I'm interested in "${title}". Is this still available?`,
           createdAt: serverTimestamp(),

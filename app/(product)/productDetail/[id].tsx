@@ -8,8 +8,10 @@ import {
   collection,
   doc,
   getDocs,
+  query,
   serverTimestamp,
   setDoc,
+  where,
 } from "firebase/firestore";
 import React, { useState } from "react";
 import {
@@ -22,18 +24,6 @@ import {
   useColorScheme,
 } from "react-native";
 
-interface Coupon {
-  id: string;
-  code: string;
-  discountAmount: number; // Flat discount in PHP
-  label: string;
-}
-
-const AVAILABLE_COUPONS: Coupon[] = [
-  { id: "1", code: "WELCOME10", discountAmount: 10, label: "₱10 Off Welcome Coupon" },
-  { id: "2", code: "STUDENT20", discountAmount: 20, label: "₱20 Off Student Pass" },
-];
-
 export default function ProductDetailsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
@@ -41,9 +31,6 @@ export default function ProductDetailsScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReserving, setIsReserving] = useState(false);
   const [isInitiatingChat, setIsInitiatingChat] = useState(false);
-
-  // Coupon state
-  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
 
   const { id, sellerId } = useLocalSearchParams<{
     id: string;
@@ -72,8 +59,7 @@ export default function ProductDetailsScreen() {
     sellerId: sellerId,
   });
 
-  const discount = selectedCoupon ? selectedCoupon.discountAmount : 0;
-  const total = Math.max(0, price - discount);
+  const total = price;
 
   const handleReserve = async () => {
     const currentUser = auth.currentUser;
@@ -108,7 +94,7 @@ export default function ProductDetailsScreen() {
         "user",
         safeSellerId,
         "itemPosted",
-        safeProductId
+        safeProductId,
       );
       await setDoc(productRef, { isReserved: true }, { merge: true });
 
@@ -135,8 +121,6 @@ export default function ProductDetailsScreen() {
             status: "pending",
             itemTitle: title || "Item",
             itemPrice: price || 0,
-            discountApplied: discount,
-            appliedCouponCode: selectedCoupon?.code || null,
             totalPrice: total,
             itemImage: image_uri || "",
             sellerName: resolvedSellerName,
@@ -144,19 +128,24 @@ export default function ProductDetailsScreen() {
             createdAt: serverTimestamp(),
           },
         },
-        { merge: true }
+        { merge: true },
       );
 
       // 3. Send initial user message
-      const messagesRef = collection(db, "chats", chatId, "messages");
-      await addDoc(messagesRef, {
-        senderId: currentUser.uid,
-        text: `Hi! I would like to reserve "${title || "this item"}" for ₱${total.toFixed(2)}${
-          selectedCoupon ? ` (Applied Coupon: ${selectedCoupon.code})` : ""
-        }.`,
-        createdAt: serverTimestamp(),
-        systemMessage: false,
-      });
+      const messagesRef = collection(db, "messages");
+      const existingMessages = await getDocs(
+        query(messagesRef, where("chatId", "==", chatId)),
+      );
+
+      if (existingMessages.empty) {
+        await addDoc(messagesRef, {
+          chatId,
+          senderId: currentUser.uid,
+          text: `Hi! I would like to reserve "${title || "this item"}" for ₱${total.toFixed(2)}.`,
+          createdAt: serverTimestamp(),
+          systemMessage: false,
+        });
+      }
 
       await createAppNotification({
         recipientUid: safeSellerId,
@@ -192,77 +181,81 @@ export default function ProductDetailsScreen() {
   };
 
   const handleContactSeller = async () => {
-  const currentUser = auth.currentUser;
+    const currentUser = auth.currentUser;
 
-  if (!currentUser) {
-    alert("Please log in to contact the seller.");
-    return;
-  }
-
-  if (currentUser.uid === sellerId) {
-    alert("You cannot start a chat with yourself.");
-    return;
-  }
-
-  setIsInitiatingChat(true);
-
-  try {
-    const safeSellerId = String(sellerId).trim();
-    const safeProductId = String(id).trim();
-    const buyerName =
-      currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
-    const resolvedSellerName = sellerName || "Seller";
-
-    // Direct Chat Identifier
-    const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_direct`;
-    const chatRef = doc(db, "chats", chatId);
-
-    await setDoc(
-      chatRef,
-      {
-        chatId,
-        participants: [currentUser.uid, safeSellerId],
-        buyerId: currentUser.uid,
-        sellerId: safeSellerId,
-        productId: safeProductId,
-        type: "direct", // Direct chat type without reservation metadata
-        updatedAt: serverTimestamp(),
-        lastMessage: `Inquired about ${title || "item"}`,
-        participantNames: {
-          [currentUser.uid]: buyerName,
-          [safeSellerId]: resolvedSellerName,
-        },
-      },
-      { merge: true }
-    );
-
-    const messagesRef = collection(db, "chats", chatId, "messages");
-    const existingMessages = await getDocs(messagesRef);
-
-    if (existingMessages.empty) {
-      await addDoc(messagesRef, {
-        senderId: currentUser.uid,
-        text: `Hi! I'm interested in "${title}". Is this still available?`,
-        createdAt: serverTimestamp(),
-        systemMessage: false,
-      });
+    if (!currentUser) {
+      alert("Please log in to contact the seller.");
+      return;
     }
 
-    // Push to the direct chat screen
-    router.push({
-      pathname: "/(chat)/direct/[chatId]" as any,
-      params: {
-        chatId,
-        otherUserName: resolvedSellerName,
-      },
-    });
-  } catch (err) {
-    console.error("Error initiating chat:", err);
-    alert("Could not start conversation. Please try again.");
-  } finally {
-    setIsInitiatingChat(false);
-  }
-};
+    if (currentUser.uid === sellerId) {
+      alert("You cannot start a chat with yourself.");
+      return;
+    }
+
+    setIsInitiatingChat(true);
+
+    try {
+      const safeSellerId = String(sellerId).trim();
+      const safeProductId = String(id).trim();
+      const buyerName =
+        currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
+      const resolvedSellerName = sellerName || "Seller";
+
+      // Direct Chat Identifier
+      const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
+      const chatRef = doc(db, "chats", chatId);
+
+      await setDoc(
+        chatRef,
+        {
+          chatId,
+          participants: [currentUser.uid, safeSellerId],
+          buyerId: currentUser.uid,
+          sellerId: safeSellerId,
+          productId: safeProductId,
+          type: "reservation",
+          updatedAt: serverTimestamp(),
+          lastMessage: `Inquired about ${title || "item"}`,
+          participantNames: {
+            [currentUser.uid]: buyerName,
+            [safeSellerId]: resolvedSellerName,
+          },
+        },
+        { merge: true },
+      );
+
+      const messagesRef = collection(db, "messages");
+      const existingMessages = await getDocs(
+        query(messagesRef, where("chatId", "==", chatId)),
+      );
+
+      if (existingMessages.empty) {
+        await addDoc(messagesRef, {
+          chatId,
+          senderId: currentUser.uid,
+          text: `Hi! I'm interested in "${title}". Is this still available?`,
+          createdAt: serverTimestamp(),
+          systemMessage: false,
+        });
+      }
+
+      // Push to the direct chat screen
+      router.push({
+        pathname: "/(chat)/[chatId]" as any,
+        params: {
+          chatId,
+          isReservation: "false",
+          otherUserName: resolvedSellerName,
+        },
+      });
+    } catch (err) {
+      console.error("Error initiating chat:", err);
+      alert("Could not start conversation. Please try again.");
+    } finally {
+      setIsInitiatingChat(false);
+    }
+  };
 
   const allImages = image_uri
     ? [image_uri, ...additionalImages]
@@ -323,7 +316,10 @@ export default function ProductDetailsScreen() {
         <View className="px-4 pt-1">
           {/* Top Header */}
           <View className="flex-row items-center mb-4 mt-8">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3 p-2">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="mr-3 p-2"
+            >
               <Ionicons
                 name="chevron-back"
                 size={24}
@@ -491,82 +487,6 @@ export default function ProductDetailsScreen() {
             </View>
           </View>
 
-          {/* Coupon Selection Card */}
-          <View
-            className={`mb-4 rounded-2xl border p-4 ${
-              isDark
-                ? "bg-[#0e0e0e]/40 border-slate-800"
-                : "bg-white border-gray-200/80"
-            }`}
-          >
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="pricetag-outline" size={18} color="#059669" />
-                <Text
-                  className={`text-sm font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Apply Coupon
-                </Text>
-              </View>
-              {selectedCoupon && (
-                <TouchableOpacity onPress={() => setSelectedCoupon(null)}>
-                  <Text className="text-xs font-semibold text-rose-500">
-                    Remove Coupon
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <View className="gap-2">
-              {AVAILABLE_COUPONS.map((coupon) => {
-                const isSelected = selectedCoupon?.id === coupon.id;
-                return (
-                  <TouchableOpacity
-                    key={coupon.id}
-                    onPress={() =>
-                      setSelectedCoupon(isSelected ? null : coupon)
-                    }
-                    className={`p-3 rounded-xl border flex-row items-center justify-between ${
-                      isSelected
-                        ? isDark
-                          ? "bg-emerald-950/40 border-emerald-500"
-                          : "bg-emerald-50 border-emerald-600"
-                        : isDark
-                        ? "border-slate-800 bg-[#0e0e0e]/20"
-                        : "border-gray-200 bg-gray-50"
-                    }`}
-                  >
-                    <View>
-                      <Text
-                        className={`font-bold text-sm ${
-                          isDark ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {coupon.code}
-                      </Text>
-                      <Text
-                        className={`text-xs ${
-                          isDark ? "text-gray-400" : "text-gray-500"
-                        }`}
-                      >
-                        {coupon.label}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name={
-                        isSelected ? "checkmark-circle" : "ellipse-outline"
-                      }
-                      size={20}
-                      color={isSelected ? "#059669" : "#9ca3af"}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
           {/* Price Breakdown Card */}
           <View
             className={`mb-6 rounded-2xl border p-4 ${
@@ -591,17 +511,6 @@ export default function ProductDetailsScreen() {
                 ₱{price.toFixed(2)}
               </Text>
             </View>
-
-            {selectedCoupon ? (
-              <View className="mt-2 flex-row justify-between">
-                <Text className="text-sm text-emerald-500 font-medium">
-                  Coupon Discount ({selectedCoupon.code})
-                </Text>
-                <Text className="text-sm text-emerald-500 font-bold">
-                  -₱{discount.toFixed(2)}
-                </Text>
-              </View>
-            ) : null}
 
             <View className="mt-3 flex-row justify-between border-t border-gray-100 dark:border-slate-800 pt-2.5">
               <Text

@@ -3,10 +3,13 @@ import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -31,9 +34,10 @@ export default function DirectChatScreen() {
   const { messages, loading, sendMessage } = useChatMessages(chatId);
   const [inputText, setInputText] = useState("");
   const [headerTitle, setHeaderTitle] = useState<string>(
-    otherUserName || "User"
+    otherUserName || "User",
   );
 
+  const flatListRef = useRef<FlatList>(null);
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -46,9 +50,7 @@ export default function DirectChatScreen() {
         if (snapshot.exists()) {
           const data = snapshot.data();
           const participants: string[] = data.participants || [];
-          const otherUid = participants.find(
-            (uid) => uid !== currentUser?.uid
-          );
+          const otherUid = participants.find((uid) => uid !== currentUser?.uid);
 
           if (otherUid) {
             const participantNames = data.participantNames || {};
@@ -85,7 +87,7 @@ export default function DirectChatScreen() {
           }
         }
       },
-      (err) => console.error("Error listening to direct chat details:", err)
+      (err) => console.error("Error listening to direct chat details:", err),
     );
 
     return () => unsubscribe();
@@ -99,7 +101,10 @@ export default function DirectChatScreen() {
   };
 
   return (
-    <View className={`flex-1`}>
+    <SafeAreaView
+      style={{ flex: 1 }}
+      className={isDark ? "bg-[#0e0e0e]" : "bg-white"}
+    >
       <Stack.Screen
         options={{
           title: headerTitle,
@@ -109,115 +114,147 @@ export default function DirectChatScreen() {
         }}
       />
 
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 24 }}
-          renderItem={({ item }) => {
-            const isMe = item.senderId === currentUser?.uid;
-            const formattedTime = formatTime(item.createdAt);
-
-            if (item.systemMessage) {
-              return (
-                <View
-                  className={`my-1.5 p-2 px-4 rounded-full self-center max-w-[85%] border ${
-                    isDark
-                      ? "bg-[#01170f] border-[#01170f]"
-                      : "bg-gray-200/80 border-gray-300/50"
-                  }`}
-                >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        <View className="flex-1">
+          {loading ? (
+            <View className="flex-1 items-center justify-center">
+              <ActivityIndicator size="large" color="#059669" />
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                padding: 16,
+                gap: 12,
+                paddingBottom: 16,
+                flexGrow: messages.length === 0 ? 1 : undefined,
+              }}
+              onContentSizeChange={() =>
+                flatListRef.current?.scrollToEnd({ animated: true })
+              }
+              onLayout={() =>
+                flatListRef.current?.scrollToEnd({ animated: false })
+              }
+              ListEmptyComponent={
+                <View className="flex-1 items-center justify-center">
                   <Text
-                    className={`text-xs text-center font-medium ${
-                      isDark ? "text-emerald-400" : "text-gray-700"
+                    className={`text-sm ${
+                      isDark ? "text-gray-400" : "text-gray-500"
                     }`}
                   >
-                    {item.text}
+                    No messages yet. Say hello!
                   </Text>
                 </View>
-              );
-            }
+              }
+              renderItem={({ item }) => {
+                const isMe = item.senderId === currentUser?.uid;
+                const formattedTime = formatTime(item.createdAt);
 
-            return (
-              <View
-                className={`max-w-[80%] px-4 py-2.5 rounded-2xl border ${
-                  isMe
-                    ? isDark
-                      ? "self-end bg-[#065f46] border-[#10b981]/30 rounded-br-xs"
-                      : "self-end bg-emerald-600 border-emerald-600 rounded-br-xs"
-                    : isDark
-                    ? "self-start bg-[#0e0e0e] border-[#01170f] rounded-bl-xs"
-                    : "self-start bg-white border-gray-200 rounded-bl-xs"
-                }`}
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: isDark ? 0.3 : 0.05,
-                  shadowRadius: 3,
-                  elevation: 1,
-                }}
-              >
-                <Text
-                  className={`text-sm leading-5 ${
-                    isMe
-                      ? "text-white"
-                      : isDark
-                      ? "text-white"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {item.text}
-                </Text>
+                if (item.systemMessage) {
+                  return (
+                    <View
+                      className={`my-1.5 p-2 px-4 rounded-full self-center max-w-[85%] border ${
+                        isDark
+                          ? "bg-[#01170f] border-[#01170f]"
+                          : "bg-gray-200/80 border-gray-300/50"
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs text-center font-medium ${
+                          isDark ? "text-emerald-400" : "text-gray-700"
+                        }`}
+                      >
+                        {item.text}
+                      </Text>
+                    </View>
+                  );
+                }
 
-                {formattedTime ? (
-                  <Text
-                    className={`text-[10px] mt-1 text-right ${
+                return (
+                  <View
+                    className={`max-w-[80%] px-4 py-2.5 rounded-2xl border ${
                       isMe
-                        ? "text-emerald-100/80"
+                        ? isDark
+                          ? "self-end bg-[#065f46] border-[#10b981]/30 rounded-br-xs"
+                          : "self-end bg-emerald-600 border-emerald-600 rounded-br-xs"
                         : isDark
-                        ? "text-gray-400"
-                        : "text-gray-500"
+                          ? "self-start bg-[#0e0e0e] border-[#01170f] rounded-bl-xs"
+                          : "self-start bg-white border-gray-200 rounded-bl-xs"
                     }`}
+                    style={{
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: isDark ? 0.3 : 0.05,
+                      shadowRadius: 3,
+                      elevation: 1,
+                    }}
                   >
-                    {formattedTime}
-                  </Text>
-                ) : null}
-              </View>
-            );
-          }}
-        />
-      )}
+                    <Text
+                      className={`text-sm leading-5 ${
+                        isMe
+                          ? "text-white"
+                          : isDark
+                            ? "text-white"
+                            : "text-gray-900"
+                      }`}
+                    >
+                      {item.text}
+                    </Text>
 
-      {/* Message Input Container */}
-      <View
-        className={`p-3 px-4 pb-10 flex-row items-center gap-2.5 border-t ${
-          isDark
-            ? "bg-[#0e0e0e] border-[#01170f]"
-            : "bg-white border-gray-200"
-        }`}
-      >
-        <TextInput
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Type a message..."
-          placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
-          className={`flex-1 px-4 py-4.5 text-sm rounded-2xl border ${
-            isDark
-              ? "bg-black/10 border-[#01170f] text-white"
-              : "bg-gray-100 border-gray-200 text-gray-900"
-          }`}
-        />
-        <TouchableOpacity
-          onPress={handleSend}
-          className="p-3 bg-emerald-600 dark:bg-[#065f46] rounded-2xl active:opacity-80"
-        >
-          <Ionicons name="send" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
+                    {formattedTime ? (
+                      <Text
+                        className={`text-[10px] mt-1 text-right ${
+                          isMe
+                            ? "text-emerald-100/80"
+                            : isDark
+                              ? "text-gray-400"
+                              : "text-gray-500"
+                        }`}
+                      >
+                        {formattedTime}
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              }}
+            />
+          )}
+
+          {/* Message Input Container */}
+          <View
+            className={`p-3 px-4 flex-row items-center gap-2.5 border-t ${
+              isDark
+                ? "bg-[#0e0e0e] border-[#01170f]"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <TextInput
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Type a message..."
+              placeholderTextColor={isDark ? "#9ca3af" : "#6b7280"}
+              className={`flex-1 px-4 py-3.5 text-sm rounded-2xl border ${
+                isDark
+                  ? "bg-black/10 border-[#01170f] text-white"
+                  : "bg-gray-100 border-gray-200 text-gray-900"
+              }`}
+            />
+            <TouchableOpacity
+              onPress={handleSend}
+              className="p-3 bg-emerald-600 dark:bg-[#065f46] rounded-2xl active:opacity-80"
+            >
+              <Ionicons name="send" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

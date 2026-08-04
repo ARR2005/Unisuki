@@ -1,27 +1,27 @@
-import { useRedeemCoupons, Coupon } from "@/feature/coupon/useRedeemCoupons";
+import { Coupon, useRedeemCoupons } from "@/feature/coupon/useRedeemCoupons";
 import { createAppNotification } from "@/feature/notifications/notifications";
 import { auth, db } from "@/service/firebaseConfigs";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  increment,
-  serverTimestamp,
-  updateDoc,
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    increment,
+    serverTimestamp,
+    updateDoc,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-  useColorScheme,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
+    useColorScheme,
 } from "react-native";
 
 export default function SummaryScreen() {
@@ -99,13 +99,13 @@ export default function SummaryScreen() {
               parsedPayload?.itemPrice ||
               parsedPayload?.price ||
               parsedPayload?.amount ||
-              0
+              0,
           ),
           totalPrice: Number(
             totalPriceParam ||
               parsedPayload?.totalPrice ||
               parsedPayload?.total ||
-              0
+              0,
           ),
         };
 
@@ -157,7 +157,7 @@ export default function SummaryScreen() {
   ]);
 
   const basePrice = Number(
-    transactionData?.itemPrice || transactionData?.price || 0
+    transactionData?.itemPrice || transactionData?.price || 0,
   );
   const discountAmount = selectedCoupon ? selectedCoupon.discountAmount : 0;
 
@@ -186,7 +186,7 @@ export default function SummaryScreen() {
           "user",
           buyerUid,
           "claimedCoupons",
-          selectedCoupon.id
+          selectedCoupon.id,
         );
         await updateDoc(couponDocRef, { isUsed: true });
       }
@@ -209,11 +209,12 @@ export default function SummaryScreen() {
         });
 
         // Add a system confirmation message in the chat
-        const messagesRef = collection(db, "chats", targetChatId, "messages");
+        const messagesRef = collection(db, "messages");
         await addDoc(messagesRef, {
+          chatId: targetChatId,
           senderId: buyerUid || "system",
           text: `🎉 Item handed over! Transaction completed for ₱${finalPrice.toFixed(
-            2
+            2,
           )}. You earned ${earnedPoints} points!`,
           createdAt: serverTimestamp(),
           systemMessage: true,
@@ -227,7 +228,7 @@ export default function SummaryScreen() {
           "user",
           targetSellerId,
           "itemPosted",
-          targetProductId
+          targetProductId,
         );
         await deleteDoc(productRef);
       }
@@ -243,7 +244,7 @@ export default function SummaryScreen() {
           db,
           "user",
           buyerUid,
-          "purchaseHistory"
+          "purchaseHistory",
         );
         await addDoc(buyerHistoryRef, {
           itemTitle,
@@ -272,7 +273,7 @@ export default function SummaryScreen() {
           db,
           "user",
           targetSellerId,
-          "salesHistory"
+          "salesHistory",
         );
         await addDoc(sellerHistoryRef, {
           itemTitle,
@@ -331,7 +332,7 @@ export default function SummaryScreen() {
               }
             },
           },
-        ]
+        ],
       );
     } catch (err) {
       console.error("Error completing transaction:", err);
@@ -439,8 +440,8 @@ export default function SummaryScreen() {
                       isSelected
                         ? "border-emerald-500 bg-emerald-100/30 dark:bg-emerald-950/40"
                         : isDark
-                        ? "border-slate-800 bg-[#0e0e0e]/20"
-                        : "border-gray-200 bg-gray-50"
+                          ? "border-slate-800 bg-[#0e0e0e]/20"
+                          : "border-gray-200 bg-gray-50"
                     }`}
                   >
                     <View>
@@ -461,9 +462,7 @@ export default function SummaryScreen() {
                     </View>
 
                     <Ionicons
-                      name={
-                        isSelected ? "checkmark-circle" : "ellipse-outline"
-                      }
+                      name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                       size={20}
                       color={isSelected ? "#059669" : "#9ca3af"}
                     />

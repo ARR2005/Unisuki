@@ -44,9 +44,10 @@ function ReservationQRHeader({
   const [showQRModal, setShowQRModal] = useState(false);
 
   const itemTitle =
-    reservationData?.itemTitle || reservationData?.productTitle || "Reserved Item";
-  const totalPrice =
-    reservationData?.totalPrice || reservationData?.price || 0;
+    reservationData?.itemTitle ||
+    reservationData?.productTitle ||
+    "Reserved Item";
+  const totalPrice = reservationData?.totalPrice || reservationData?.price || 0;
   const status = reservationData?.status || "pending";
   const productImage =
     reservationData?.itemImage || reservationData?.productImage || null;
@@ -69,7 +70,7 @@ function ReservationQRHeader({
           "user",
           reservationData.sellerId,
           "itemPosted",
-          reservationData.productId
+          reservationData.productId,
         );
         await updateDoc(productRef, {
           isReserved: false,
@@ -115,10 +116,11 @@ function ReservationQRHeader({
           elevation: 3,
         }}
       >
-        {/* Top Header Row */}
         <View
           className={`px-3 py-2 border-b ${
-            isDark ? "border-slate-800 bg-white/5" : "border-gray-100 bg-gray-50/50"
+            isDark
+              ? "border-slate-800 bg-white/5"
+              : "border-gray-100 bg-gray-50/50"
           }`}
         >
           <View className="flex-row items-center justify-between">
@@ -131,8 +133,8 @@ function ReservationQRHeader({
                 {isSeller
                   ? "Show QR to buyer upon meeting"
                   : isConfirmed
-                  ? "Scanned the QR code"
-                  : "Scan QR code"}
+                    ? "Scanned the QR code"
+                    : "Scan QR code"}
               </Text>
               <Text
                 className={`text-xs font-semibold ${
@@ -143,8 +145,8 @@ function ReservationQRHeader({
                 {isSeller
                   ? ""
                   : isConfirmed
-                  ? "Scanned the QR to proceed to transaction"
-                  : "Scan seller's QR code to confirm item handover"}
+                    ? "Scanned the QR to proceed to transaction"
+                    : "Scan seller's QR code to confirm item handover"}
               </Text>
             </View>
 
@@ -167,7 +169,11 @@ function ReservationQRHeader({
                   onPress={handleDeclineReservation}
                   className="flex-row items-center gap-1 bg-rose-600 px-2.5 py-1.5 rounded-xl active:bg-rose-700"
                 >
-                  <Ionicons name="close-circle-outline" size={14} color="#fff" />
+                  <Ionicons
+                    name="close-circle-outline"
+                    size={14}
+                    color="#fff"
+                  />
                   <Text className="text-white font-bold text-xs">Decline</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -342,7 +348,7 @@ export default function ChatScreen() {
   const [reservationData, setReservationData] = useState<any>(null);
 
   const [headerTitle, setHeaderTitle] = useState<string>(
-    otherUserName || "User"
+    otherUserName || "User",
   );
 
   const currentUser = auth.currentUser;
@@ -410,7 +416,7 @@ export default function ChatScreen() {
           }
         }
       },
-      (err) => console.error("Error listening to chat details:", err)
+      (err) => console.error("Error listening to chat details:", err),
     );
 
     return () => unsubscribe();
@@ -490,8 +496,8 @@ export default function ChatScreen() {
                     isMe
                       ? "text-white"
                       : isDark
-                      ? "text-gray-100"
-                      : "text-gray-800"
+                        ? "text-gray-100"
+                        : "text-gray-800"
                   }`}
                 >
                   {item.text}
@@ -516,7 +522,9 @@ export default function ChatScreen() {
 
       <View
         className={`p-2.5 px-3 flex-row items-center gap-2 border-t ${
-          isDark ? "bg-[#0e0e0e] border-slate-800" : "bg-white border-gray-200/80"
+          isDark
+            ? "bg-[#0e0e0e] border-slate-800"
+            : "bg-white border-gray-200/80"
         }`}
       >
         <TextInput

@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { auth, db } from "@/service/firebaseConfigs";
 import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
   addDoc,
+  collection,
+  onSnapshot,
+  query,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
-import { db, auth } from "@/service/firebaseConfigs";
+import { useEffect, useState } from "react";
 
 export interface Message {
   id: string;
+  chatId: string;
   senderId: string;
   text: string;
   createdAt: any;
@@ -23,20 +24,40 @@ export function useChatMessages(chatId: string) {
 
   useEffect(() => {
     if (!chatId) {
+      setMessages([]);
       setLoading(false);
       return;
     }
 
-    const messagesRef = collection(db, "chats", chatId, "messages");
-    const q = query(messagesRef, orderBy("createdAt", "asc"));
+    const messagesRef = collection(db, "messages");
+    const q = query(messagesRef, where("chatId", "==", chatId));
 
     const unsubscribe = onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snapshot) => {
-        const list: Message[] = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })) as Message[];
+        const list: Message[] = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data({ serverTimestamps: "estimate" });
+            return {
+              id: docSnap.id,
+              chatId: data.chatId || chatId,
+              senderId: data.senderId || "",
+              text: data.text || "",
+              createdAt: data.createdAt,
+              systemMessage: data.systemMessage ?? false,
+            };
+          })
+          .sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            const aTime = a.createdAt.toMillis
+              ? a.createdAt.toMillis()
+              : a.createdAt;
+            const bTime = b.createdAt.toMillis
+              ? b.createdAt.toMillis()
+              : b.createdAt;
+            return aTime - bTime;
+          });
 
         setMessages(list);
         setLoading(false);
@@ -44,20 +65,20 @@ export function useChatMessages(chatId: string) {
       (err) => {
         console.error("Error listening to chat messages:", err);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();
   }, [chatId]);
 
-  // Send a new text message
   const sendMessage = async (text: string) => {
     const currentUser = auth.currentUser;
-    if (!currentUser || !text.trim()) return;
+    if (!currentUser || !text.trim() || !chatId) return;
 
     try {
-      const messagesRef = collection(db, "chats", chatId, "messages");
+      const messagesRef = collection(db, "messages");
       await addDoc(messagesRef, {
+        chatId,
         senderId: currentUser.uid,
         text: text.trim(),
         createdAt: serverTimestamp(),
