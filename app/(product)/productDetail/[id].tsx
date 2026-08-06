@@ -7,22 +7,24 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
+  increment,
   query,
   serverTimestamp,
   setDoc,
   where,
 } from "firebase/firestore";
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
   useColorScheme,
-  Dimensions,
+  View,
 } from "react-native";
 
 export default function ProductDetailsScreen() {
@@ -87,11 +89,20 @@ export default function ProductDetailsScreen() {
     try {
       const safeSellerId = String(sellerId).trim();
       const safeProductId = String(id).trim();
+      const buyerUid = currentUser.uid;
       const buyerName =
         currentUser.displayName || currentUser.email?.split("@")[0] || "Buyer";
       const resolvedSellerName = sellerName || "Seller";
 
-      // 1. Mark item as reserved
+      const reservationCountRef = doc(
+        db,
+        "user",
+        safeSellerId,
+        "itemPosted",
+        safeProductId,
+        "reservedCount",
+        buyerUid,
+      );
       const productRef = doc(
         db,
         "user",
@@ -99,11 +110,55 @@ export default function ProductDetailsScreen() {
         "itemPosted",
         safeProductId,
       );
-      await setDoc(productRef, { isReserved: true }, { merge: true });
-
-      // 2. Setup Chat document with participant names
       const chatId = `${currentUser.uid}_${safeSellerId}_${safeProductId}_res`;
       const chatRef = doc(db, "chats", chatId);
+
+      const chatSnap = await getDoc(chatRef);
+      const existingChat = chatSnap.exists() ? chatSnap.data() : null;
+      const existingReservation = existingChat?.reservation || {};
+      const existingPersistentReserved = Array.isArray(
+        existingReservation.persistentReserved,
+      )
+        ? (existingReservation.persistentReserved as string[])
+        : [];
+      const currentAttempts = existingPersistentReserved.filter(
+        (uid: string) => uid === buyerUid,
+      ).length;
+
+      if (currentAttempts >= 3) {
+        alert(
+          "You have reached the maximum number of reservation attempts for this item.",
+        );
+        return;
+      }
+
+      if (existingChat && existingReservation.status === "pending") {
+        alert("You already have a pending reservation for this item.");
+        router.replace({
+          pathname: "/(chat)/[chatId]",
+          params: {
+            chatId,
+            isReservation: "true",
+            otherUserName: resolvedSellerName,
+          },
+        });
+        return;
+      }
+
+      const persistentReserved = [...existingPersistentReserved, buyerUid];
+
+      await setDoc(
+        reservationCountRef,
+        {
+          buyerUid,
+          buyerName,
+          count: increment(1),
+          lastReservedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      await setDoc(productRef, { isReserved: true }, { merge: true });
 
       await setDoc(
         chatRef,
@@ -129,12 +184,13 @@ export default function ProductDetailsScreen() {
             sellerName: resolvedSellerName,
             buyerName: buyerName,
             createdAt: serverTimestamp(),
+            persistentReserved,
           },
         },
         { merge: true },
       );
 
-      // 3. Send initial user message
+      // 4. Send initial user message if chat is new
       const messagesRef = collection(db, "messages");
       const existingMessages = await getDocs(
         query(messagesRef, where("chatId", "==", chatId)),
@@ -150,6 +206,7 @@ export default function ProductDetailsScreen() {
         });
       }
 
+      // 5. Send notification
       await createAppNotification({
         recipientUid: safeSellerId,
         title: "New reservation request",
@@ -163,11 +220,13 @@ export default function ProductDetailsScreen() {
         routeParams: {
           chatId,
           isReservation: "true",
+
           otherUserName: buyerName,
         },
       });
 
-      router.push({
+      // 6. Navigate to chat screen
+      router.replace({
         pathname: "/(chat)/[chatId]",
         params: {
           chatId,

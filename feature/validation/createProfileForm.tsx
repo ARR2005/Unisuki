@@ -86,7 +86,7 @@ const CreateProfileForm = forwardRef<
   };
 
   const handleIdNumberChange = (value: string) => {
-    const numericValue = value.replace(/\D/g, "").slice(0, 20);
+    const numericValue = value.replace(/\D/g, "").slice(0, 11);
     updateField("idNumber", numericValue);
   };
 
@@ -100,7 +100,7 @@ const CreateProfileForm = forwardRef<
     const ageNum = Number(formData.age);
     if (!formData.age) {
       newErrors.age = "Age is required.";
-    } else if (isNaN(ageNum) || ageNum < 14 || ageNum > 79) {
+    } else if (isNaN(ageNum) || ageNum < 14 ) {
       newErrors.age = "Please enter a valid age.";
     }
 
@@ -245,7 +245,7 @@ const CreateProfileForm = forwardRef<
                 ID Number
               </Text>
               <Text className={`text-xs text-gray-500`}>
-                {formData.idNumber.length}/20
+                {formData.idNumber.length}/11
               </Text>
             </View>
             <View
@@ -267,7 +267,7 @@ const CreateProfileForm = forwardRef<
                 editable={!isLoading}
                 placeholderTextColor="#999"
                 keyboardType="number-pad"
-                maxLength={20}
+                maxLength={13}
               />
             </View>
             {errors.idNumber && (

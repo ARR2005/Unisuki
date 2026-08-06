@@ -18,7 +18,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   // Format numeric prices safely
   const formattedPrice =
-    typeof price === "number" ? `$${price.toFixed(2)}` : price;
+    typeof price === "number" ? `₱${price.toFixed(2)}` : price;
 
   return (
     <TouchableOpacity

@@ -1,5 +1,5 @@
 import { db } from "@/service/firebaseConfigs";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 export type NotificationPayload = {
   recipientUid?: string;
@@ -33,34 +33,44 @@ export async function createAppNotification(payload: NotificationPayload) {
     return false;
   }
 
-  console.log("Creating notification", payload);
+  console.log("Creating/Updating notification", payload);
 
   try {
-    const notificationsRef = collection(db, "notifications");
     const notificationIds: string[] = [];
 
     for (const recipientUid of recipientUids) {
-      const docRef = await addDoc(notificationsRef, {
-        recipientUid,
-        senderUid: payload.senderUid || "",
-        title: payload.title,
-        body: payload.body,
-        type: payload.type,
-        chatId: payload.chatId || "",
-        productId: payload.productId || "",
-        sellerId: payload.sellerId || "",
-        buyerId: payload.buyerId || "",
-        routePath: payload.routePath || "",
-        routeParams: payload.routeParams || {},
-        read: false,
-        createdAt: serverTimestamp(),
-        createdAtFallback: new Date().toISOString(),
-      });
+      // Create a unique, deterministic ID for this recipient + chat combination
+      // If chatId is not provided, fall back to buyerId + productId
+      const baseIdentifier = payload.chatId || `${payload.buyerId}_${payload.productId}`;
+      const customDocId = `${recipientUid}_${baseIdentifier}`;
 
-      notificationIds.push(docRef.id);
+      const notificationRef = doc(db, "notifications", customDocId);
+
+      await setDoc(
+        notificationRef,
+        {
+          recipientUid,
+          senderUid: payload.senderUid || "",
+          title: payload.title,
+          body: payload.body,
+          type: payload.type,
+          chatId: payload.chatId || "",
+          productId: payload.productId || "",
+          sellerId: payload.sellerId || "",
+          buyerId: payload.buyerId || "",
+          routePath: payload.routePath || "",
+          routeParams: payload.routeParams || {},
+          read: false, // Reset to unread so recipient sees the updated notification
+          createdAt: serverTimestamp(),
+          createdAtFallback: new Date().toISOString(),
+        },
+        { merge: true } // Overwrites existing notification if it exists
+      );
+
+      notificationIds.push(customDocId);
     }
 
-    console.log("Notification(s) created in Firestore", {
+    console.log("Notification(s) updated in Firestore", {
       recipientUids,
       notificationIds,
     });
